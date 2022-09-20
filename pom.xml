@@ -8,6 +8,36 @@
     <packaging>pom</packaging>
     <name>Parent POM for all Octopus Maven-based projects</name>
 
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Konstantin Zaporozhtsev</name>
+            <email>kzaporozhtsev@gmail.com</email>
+            <organization>OctopusDen</organization>
+            <organizationUrl>https://github.com/kzaporozhtsev</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/kzaporozhtsev/octopus-parent.git</connection>
+        <developerConnection>scm:git:ssh://github.com:kzaporozhtsev/octopus-parent.git</developerConnection>
+        <url>https://github.com/kzaporozhtsev/octopus-parent/tree/master</url>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>ossrh</id>
+            <name>Central Repository OSSRH</name>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
     <properties>
         <artifactory-maven-plugin.version>3.2.3</artifactory-maven-plugin.version>
         <!-- maven plugins -->
