@@ -63,9 +63,6 @@
             <resource>
                 <directory>${basedir}/src/main/resources</directory>
             </resource>
-            <resource>
-                <filtering>true</filtering>
-            </resource>
         </resources>
         <pluginManagement>
             <plugins>
