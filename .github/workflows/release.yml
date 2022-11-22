@@ -1,0 +1,58 @@
+name: Maven Release New
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      BUILD_VERSION:
+        description: 'Build version'
+        default: '1.0-SNAPSHOT'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: Prod
+    env:
+      BUILD_VERSION: ${{ github.event.inputs.BUILD_VERSION }}
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Build and Test
+        uses: qcastel/github-actions-maven-cmd@master
+        with:
+          maven-args: "clean install"
+
+      - name: Set Version
+        uses: qcastel/github-actions-maven-cmd@master
+        with:
+          maven-args: "org.codehaus.mojo:versions-maven-plugin:2.13.0:set -DnewVersion=${{env.BUILD_VERSION}}"
+
+      - name: Set up Maven Central Repository
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }} # gpg private key to import
+          gpg-passphrase: GPG_PASSPHRASE # env variable for gpg signing in deploy
+
+      - name: Publish package
+        run: mvn --batch-mode deploy -P gpg
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Create Release
+        uses: "marvinpinto/action-automatic-releases@master"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          automatic_release_tag: "v${{env.BUILD_VERSION}}"
+          files: |
+            pom.xml
