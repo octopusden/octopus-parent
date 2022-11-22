@@ -6,7 +6,8 @@
     <artifactId>octopus-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>Parent POM for all Octopus Maven-based projects</name>
+    <name>Octopus Maven Parent</name>
+    <description>Parent POM for all Octopus Maven-based projects</description>
 
     <licenses>
         <license>
