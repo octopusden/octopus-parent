@@ -8,6 +8,7 @@
     <packaging>pom</packaging>
     <name>Octopus Maven Parent</name>
     <description>Parent POM for all Octopus Maven-based projects</description>
+    <url>https://octopusden.org</url>
 
     <licenses>
         <license>
