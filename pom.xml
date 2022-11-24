@@ -17,25 +17,10 @@
         </license>
     </licenses>
 
-    <developers>
-        <developer>
-            <name>Konstantin Zaporozhtsev</name>
-            <email>kzaporozhtsev@gmail.com</email>
-            <organization>Octopus Den</organization>
-            <organizationUrl>https://octopusden.org</organizationUrl>
-        </developer>
-        <developer>
-            <name>Philip Gorbachev</name>
-            <email>phil.gorbachev@gmail.com</email>
-            <organization>Octopus Den</organization>
-            <organizationUrl>https://octopusden.org</organizationUrl>
-        </developer>
-    </developers>
-
     <scm>
-        <connection>scm:git:git://github.com/kzaporozhtsev/octopus-parent.git</connection>
-        <developerConnection>scm:git:ssh://github.com:kzaporozhtsev/octopus-parent.git</developerConnection>
-        <url>https://github.com/kzaporozhtsev/octopus-parent/tree/master</url>
+        <connection>scm:git:git://github.com/octopusden/octopus-parent.git</connection>
+        <developerConnection>scm:git:ssh://github.com:octopusden/octopus-parent.git</developerConnection>
+        <url>https://github.com/octopusden/octopus-parent/tree/master</url>
     </scm>
 
     <distributionManagement>
