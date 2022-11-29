@@ -23,6 +23,13 @@
         <url>https://github.com/octopusden/octopus-parent/tree/master</url>
     </scm>
 
+    <developers>
+        <developer>
+            <id>octopus</id>
+            <name>octopus</name>
+        </developer>
+    </developers>
+
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
