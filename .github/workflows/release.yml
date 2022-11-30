@@ -20,10 +20,35 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
-      - name: Build and Test
-        uses: qcastel/github-actions-maven-cmd@master
+      - name: Get the tag version
+        id: tag_version
+        uses: oprypin/find-latest-tag@v1
         with:
-          maven-args: "clean install"
+          repository: ${{ github.repository }}
+          regex: '^v([0-9]+)\..*'
+      - uses: actions-ecosystem/action-regex-match@v2
+        id: version
+        name: Prepare a version from a tag
+        with:
+          text: ${{ steps.tag_version.outputs.tag }}
+          regex: '^v([0-9]+)\.?([0-9]+)?\.?([0-9]+)?'
+          flags: gm
+      - run: |
+          echo "MAJOR: ${{ steps.version.outputs.group1 }}"
+          echo "MINOR: ${{ steps.version.outputs.group2 }}"
+          echo "PATCH: ${{ steps.version.outputs.group3 }}"
+      - if: ${{ steps.version.outputs.group1 == ''}}
+        run: echo "BUILD_VERSION=2.0.0" >> $GITHUB_ENV
+      - if: ${{ steps.version.outputs.group2 == ''}}
+        run: echo "BUILD_VERSION=${{ steps.version.outputs.group1 }}.0.0" >> $GITHUB_ENV
+      - if: ${{ steps.version.outputs.group3 == ''}}
+        run: echo "BUILD_VERSION=${{ steps.version.outputs.group1 }}.${{ steps.version.outputs.group2 }}.0" >> $GITHUB_ENV
+      - if: ${{ steps.version.outputs.group3 != ''}}
+        run: |
+          VERSION_PATCH=${{ steps.version.outputs.group3 }}
+          echo "BUILD_VERSION=${{ steps.version.outputs.group1 }}.${{ steps.version.outputs.group2 }}.$(($VERSION_PATCH+1))" >> $GITHUB_ENV
+      - run: |
+          echo "BUILD_VERSION: ${{ env.BUILD_VERSION }}"
 
       - name: Set Version
         uses: qcastel/github-actions-maven-cmd@master
