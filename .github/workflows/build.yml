@@ -7,4 +7,3 @@ jobs:
     uses: octopusden/octopus-base/.github/workflows/common-java-maven-build.yml@v2.1.8
     with:
       java-version: '11'
-      flow-type: public
