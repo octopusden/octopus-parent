@@ -4,7 +4,8 @@ on: workflow_dispatch
 
 jobs:
   build:
-    uses: octopusden/octopus-base/.github/workflows/common-java-maven-release.yml@sonatype-repo-update
+    uses: octopusden/octopus-base/.github/workflows/common-java-maven-release.yml@v2.1.7
     with:
       java-version: '11'
+      server-id: central
     secrets: inherit
