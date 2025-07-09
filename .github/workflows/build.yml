@@ -4,6 +4,7 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   run-build-and-deploy:
-    uses: octopusden/octopus-base/.github/workflows/common-java-maven-build.yml@7ea1efe169737531e2508ac6620fa7b534e5c8fc
+    uses: octopusden/octopus-base/.github/workflows/common-java-maven-build.yml@sonatype-repo-update
     with:
       java-version: '11'
+      flow-type: public
