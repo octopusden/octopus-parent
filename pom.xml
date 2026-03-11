@@ -100,6 +100,53 @@
                                 </rules>
                             </configuration>
                         </execution>
+                        <execution>
+                            <id>require-central-metadata</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <requireProperty>
+                                        <property>project.name</property>
+                                        <message>Maven Central requires project.name</message>
+                                    </requireProperty>
+                                    <requireProperty>
+                                        <property>project.description</property>
+                                        <message>Maven Central requires project.description</message>
+                                    </requireProperty>
+                                    <requireProperty>
+                                        <property>project.url</property>
+                                        <message>Maven Central requires project.url</message>
+                                    </requireProperty>
+                                    <requireProperty>
+                                        <property>project.licenses[0].name</property>
+                                        <message>Maven Central requires at least one license name</message>
+                                    </requireProperty>
+                                    <requireProperty>
+                                        <property>project.licenses[0].url</property>
+                                        <message>Maven Central requires at least one license url</message>
+                                    </requireProperty>
+                                    <requireProperty>
+                                        <property>project.developers[0].name</property>
+                                        <message>Maven Central requires at least one developer name</message>
+                                    </requireProperty>
+                                    <requireProperty>
+                                        <property>project.scm.connection</property>
+                                        <message>Maven Central requires project.scm.connection</message>
+                                    </requireProperty>
+                                    <requireProperty>
+                                        <property>project.scm.developerConnection</property>
+                                        <message>Maven Central requires project.scm.developerConnection</message>
+                                    </requireProperty>
+                                    <requireProperty>
+                                        <property>project.scm.url</property>
+                                        <message>Maven Central requires project.scm.url</message>
+                                    </requireProperty>
+                                </rules>
+                            </configuration>
+                        </execution>
                     </executions>
                 </plugin>
                 <plugin>
@@ -164,6 +211,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.sonatype.central</groupId>
