@@ -54,6 +54,7 @@
         <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
         <detekt-maven-plugin.version>1.23.8</detekt-maven-plugin.version>
         <ktlint-maven-plugin.version>3.7.1</ktlint-maven-plugin.version>
+        <build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
         <download-maven-plugin.version>1.13.0</download-maven-plugin.version>
         <pitest-maven.version>1.30.0</pitest-maven.version>
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
@@ -205,6 +206,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${build-helper-maven-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>add-generated-sources</id>
@@ -219,50 +221,23 @@
                         </execution>
                     </executions>
                 </plugin>
-                <!-- Analyzer configuration lives here so `mvn checkstyle:check` etc. work standalone;
-                     the octopus-* profiles below only bind the executions. -->
+                <!-- Analyzer plugins: versions only. All configuration lives in the JDK-gated profiles below, so a
+                     consumer that already invokes checkstyle/pmd itself on a JDK 8 build sees nothing but a version
+                     bump — the Java 11 Checkstyle engine in particular must never reach a JDK 8 build. -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${maven-checkstyle-plugin.version}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>com.puppycrawl.tools</groupId>
-                            <artifactId>checkstyle</artifactId>
-                            <version>${checkstyle.version}</version>
-                        </dependency>
-                    </dependencies>
-                    <configuration>
-                        <configLocation>${octopus.quality.config.url}/checkstyle.xml</configLocation>
-                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                        <consoleOutput>true</consoleOutput>
-                        <violationSeverity>warning</violationSeverity>
-                        <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-pmd-plugin</artifactId>
                     <version>${maven-pmd-plugin.version}</version>
-                    <configuration>
-                        <rulesets>
-                            <ruleset>${octopus.quality.config.url}/pmd-ruleset.xml</ruleset>
-                        </rulesets>
-                        <includeTests>true</includeTests>
-                        <printFailingErrors>true</printFailingErrors>
-                        <targetJdk>${maven.compiler.target}</targetJdk>
-                        <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>${spotbugs-maven-plugin.version}</version>
-                    <configuration>
-                        <includeTests>true</includeTests>
-                        <xmlOutput>true</xmlOutput>
-                        <failOnError>${octopus.quality.failOnViolation}</failOnError>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
@@ -273,39 +248,11 @@
                     <groupId>com.github.ozsie</groupId>
                     <artifactId>detekt-maven-plugin</artifactId>
                     <version>${detekt-maven-plugin.version}</version>
-                    <configuration>
-                        <!-- Fetched from ${octopus.quality.config.url} by download-maven-plugin at initialize;
-                             detekt takes a file path, not a URL. -->
-                        <config>${project.build.directory}/octopus-quality/detekt.yml</config>
-                        <buildUponDefaultConfig>true</buildUponDefaultConfig>
-                        <!-- src, not basedir: Kotlin files also live under src/main/java in some repos,
-                             and basedir would pull in target/. -->
-                        <input>${basedir}/src</input>
-                        <failBuildOnMaxIssuesReached>${octopus.quality.failOnViolation}</failBuildOnMaxIssuesReached>
-                        <!-- Same formats the Gradle plugin enables (xml, html, sarif); default is console only. -->
-                        <report>
-                            <report>xml:${project.build.directory}/detekt/detekt.xml</report>
-                            <report>html:${project.build.directory}/detekt/detekt.html</report>
-                            <report>sarif:${project.build.directory}/detekt/detekt.sarif</report>
-                        </report>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>com.github.gantsign.maven</groupId>
                     <artifactId>ktlint-maven-plugin</artifactId>
                     <version>${ktlint-maven-plugin.version}</version>
-                    <configuration>
-                        <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
-                        <reporters>
-                            <reporter>
-                                <name>plain</name>
-                            </reporter>
-                            <reporter>
-                                <name>checkstyle</name>
-                                <output>${project.build.directory}/ktlint/ktlint.xml</output>
-                            </reporter>
-                        </reporters>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>com.googlecode.maven-download-plugin</groupId>
@@ -316,24 +263,6 @@
                     <groupId>org.pitest</groupId>
                     <artifactId>pitest-maven</artifactId>
                     <version>${pitest-maven.version}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.pitest</groupId>
-                            <artifactId>pitest-junit5-plugin</artifactId>
-                            <version>${pitest-junit5-plugin.version}</version>
-                        </dependency>
-                    </dependencies>
-                    <configuration>
-                        <targetClasses>
-                            <param>${project.groupId}.*</param>
-                        </targetClasses>
-                        <outputFormats>
-                            <param>XML</param>
-                            <param>HTML</param>
-                        </outputFormats>
-                        <timestampedReports>false</timestampedReports>
-                        <mutationThreshold>${octopus.mutation.threshold}</mutationThreshold>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -409,6 +338,7 @@
                                     <goal>enforce</goal>
                                 </goals>
                                 <configuration>
+                                    <fail>${octopus.quality.failOnViolation}</fail>
                                     <rules>
                                         <!-- dependencyConvergence is deliberately NOT here: on a legacy consumer it
                                              fails on dozens of transitive Maven/Plexus splits and would block
@@ -422,6 +352,20 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-checkstyle-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.puppycrawl.tools</groupId>
+                                <artifactId>checkstyle</artifactId>
+                                <version>${checkstyle.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                            <configLocation>${octopus.quality.config.url}/checkstyle.xml</configLocation>
+                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                            <consoleOutput>true</consoleOutput>
+                            <violationSeverity>warning</violationSeverity>
+                            <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>octopus-checkstyle</id>
@@ -435,6 +379,15 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-pmd-plugin</artifactId>
+                        <configuration>
+                            <rulesets>
+                                <ruleset>${octopus.quality.config.url}/pmd-ruleset.xml</ruleset>
+                            </rulesets>
+                            <includeTests>true</includeTests>
+                            <printFailingErrors>true</printFailingErrors>
+                            <targetJdk>${maven.compiler.target}</targetJdk>
+                            <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>octopus-pmd</id>
@@ -448,6 +401,12 @@
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
+                        <configuration>
+                            <!-- effort/threshold at engine defaults, like the Gradle plugin -->
+                            <includeTests>true</includeTests>
+                            <xmlOutput>true</xmlOutput>
+                            <failOnError>${octopus.quality.failOnViolation}</failOnError>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>octopus-spotbugs</id>
@@ -522,6 +481,29 @@
             </activation>
             <build>
                 <plugins>
+                    <!-- ktlint scans Maven's compile source roots. Repos that hand Kotlin dirs to
+                         kotlin-maven-plugin via <sourceDirs> never register them there, so without this
+                         ktlint silently checks nothing. javac, Checkstyle and PMD only pick *.java from a
+                         root, so registering the Kotlin dirs is harmless for them. -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>octopus-register-kotlin-sources</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                    <goal>add-test-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>${basedir}/src/main/kotlin</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>com.googlecode.maven-download-plugin</groupId>
                         <artifactId>download-maven-plugin</artifactId>
@@ -543,6 +525,20 @@
                     <plugin>
                         <groupId>com.github.ozsie</groupId>
                         <artifactId>detekt-maven-plugin</artifactId>
+                        <configuration>
+                            <!-- Fetched above; detekt takes a file path, not a URL. -->
+                            <config>${project.build.directory}/octopus-quality/detekt.yml</config>
+                            <buildUponDefaultConfig>true</buildUponDefaultConfig>
+                            <!-- src, not basedir: Kotlin also lives under src/main/java in some repos, and
+                                 basedir would pull in target/. -->
+                            <input>${basedir}/src</input>
+                            <failBuildOnMaxIssuesReached>${octopus.quality.failOnViolation}</failBuildOnMaxIssuesReached>
+                            <report>
+                                <report>xml:${project.build.directory}/detekt/detekt.xml</report>
+                                <report>html:${project.build.directory}/detekt/detekt.html</report>
+                                <report>sarif:${project.build.directory}/detekt/detekt.sarif</report>
+                            </report>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>octopus-detekt</id>
@@ -556,6 +552,18 @@
                     <plugin>
                         <groupId>com.github.gantsign.maven</groupId>
                         <artifactId>ktlint-maven-plugin</artifactId>
+                        <configuration>
+                            <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
+                            <reporters>
+                                <reporter>
+                                    <name>plain</name>
+                                </reporter>
+                                <reporter>
+                                    <name>checkstyle</name>
+                                    <output>${project.build.directory}/ktlint/ktlint.xml</output>
+                                </reporter>
+                            </reporters>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>octopus-ktlint</id>
@@ -582,6 +590,28 @@
                     <plugin>
                         <groupId>org.pitest</groupId>
                         <artifactId>pitest-maven</artifactId>
+                        <!-- JUnit Platform adapter: the org standard is JUnit 5 (Spek runs on the platform too).
+                             A JUnit 4-only repository adds org.junit.vintage:junit-vintage-engine (test scope)
+                             to run under it; without the platform on the test classpath the adapter fails
+                             with NoClassDefFoundError. -->
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.pitest</groupId>
+                                <artifactId>pitest-junit5-plugin</artifactId>
+                                <version>${pitest-junit5-plugin.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                            <!-- No targetClasses: PIT discovers the module's own classes. groupId is not a
+                                 package prefix here (versions-api: org.octopusden.releng; license-maven-plugin:
+                                 org.codehaus.mojo). -->
+                            <outputFormats>
+                                <param>XML</param>
+                                <param>HTML</param>
+                            </outputFormats>
+                            <timestampedReports>false</timestampedReports>
+                            <mutationThreshold>${octopus.mutation.threshold}</mutationThreshold>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>octopus-pitest</id>

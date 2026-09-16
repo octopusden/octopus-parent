@@ -21,7 +21,7 @@ Everything is bound to `verify`, so `mvn verify` locally is exactly the gate CI 
 |---|---|---|
 | `octopus-quality` | build JDK ≥ 11 and `octopus.quality.skip` unset | enforcer (`banDuplicatePomDependencyVersions`), Checkstyle, PMD, SpotBugs, JaCoCo report + line-coverage check |
 | `octopus-kotlin-quality` | as above **and** `src/main/kotlin` exists in the module | detekt, ktlint |
-| `octopus-mutation` | `-Poctopus-mutation` only | PIT mutation testing (`target/pit-reports/`) |
+| `octopus-mutation` | `-Poctopus-mutation` only | PIT mutation testing (`target/pit-reports/`), JUnit Platform adapter included — a JUnit 4-only repository adds `org.junit.vintage:junit-vintage-engine` (test scope) |
 
 Rulesets are the files bundled in the Gradle convention plugin, pinned to an octopus-base tag
 (`octopus.quality.config.url`), so a Maven and a Gradle repository judge code by identical rules.
@@ -53,7 +53,9 @@ so copy the org one once:
 curl -sO "$(mvn help:evaluate -Dexpression=octopus.quality.config.url -q -DforceStdout)/.editorconfig"
 ```
 
-Kotlin files under `src/main/java` are analysed too (detekt input is `src/`).
+Kotlin files under `src/main/java` are analysed too (detekt input is `src/`). The profile registers
+`src/main/kotlin` and `src/test/kotlin` as Maven source roots so ktlint sees them even when a repository
+hands them to `kotlin-maven-plugin` through `<sourceDirs>` only.
 
 ### Reports
 
