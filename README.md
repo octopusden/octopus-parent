@@ -34,6 +34,11 @@ change from this parent until it moves the build JDK to 11 or 17 — the bytecod
 separate (`maven.compiler.source/target` stay `1.8`). Moving the build JDK is what switches the
 gates on; nothing else needs to change in the consumer.
 
+This parent does not pick a baseline JDK and does not change the org's JVM policy: bytecode stays
+Java 8, an ordinary build still runs on JDK 8, and the analyzers require 11+. Whether the org
+standardises on a main JDK, and against which support matrix, is a separate decision this change
+deliberately leaves open — the profiles work on whatever JDK ≥ 11 a repository chooses.
+
 ### Properties
 
 | Property | Default | Meaning |
@@ -73,7 +78,12 @@ hands them to `kotlin-maven-plugin` through `<sourceDirs>` only.
 
 1. Bump the parent. On JDK 8 CI nothing changes; on JDK 11+ the build now prints findings and
    uploads reports, and still passes.
-2. Fix the findings (Kotlin: `mvn ktlint:format` first — nearly all of them are formatting).
+2. Fix the findings. Kotlin first: `mvn initialize ktlint:format` — nearly all Kotlin findings are
+   formatting. The `initialize` phase is required, not decorative: it is where the Kotlin source roots
+   are registered, and `mvn ktlint:format` alone reports `0 file(s) formatted` on a repository that
+   declares Kotlin through `kotlin-maven-plugin` `<sourceDirs>`. Measured on octopus-releng-lib: 166
+   ktlint findings before, 6 after — the remainder are wildcard imports and property naming, which
+   ktlint cannot rewrite.
 3. Set `<octopus.quality.failOnViolation>true</octopus.quality.failOnViolation>` in the repository POM.
 
 Also in `dependencyManagement`: `nl.jqno.equalsverifier:equalsverifier-nodep` (test scope), for

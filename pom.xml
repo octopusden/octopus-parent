@@ -489,16 +489,30 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>build-helper-maven-plugin</artifactId>
                         <executions>
+                            <!-- Two executions, not one with both goals: add-source and add-test-source read the
+                                 same <sources> parameter, so a shared configuration would put src/main/kotlin into
+                                 the TEST roots and never register src/test/kotlin at all. -->
                             <execution>
                                 <id>octopus-register-kotlin-sources</id>
                                 <phase>initialize</phase>
                                 <goals>
                                     <goal>add-source</goal>
-                                    <goal>add-test-source</goal>
                                 </goals>
                                 <configuration>
                                     <sources>
                                         <source>${basedir}/src/main/kotlin</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>octopus-register-kotlin-test-sources</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>add-test-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>${basedir}/src/test/kotlin</source>
                                     </sources>
                                 </configuration>
                             </execution>
