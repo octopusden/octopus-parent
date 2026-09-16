@@ -40,6 +40,20 @@ So the command that reproduces CI locally is `mvn package`.
 step; the files below exist in the build workspace. Collecting them is the follow-up
 `common-java-maven-quality-gates.yml` in octopus-base.
 
+### Network dependency
+
+The rulesets are fetched from `raw.githubusercontent.com` at `initialize` and cached in `~/.m2`. A CI runner
+starts with a cold cache, so **every JDK 11+ CI build makes that request**, and an unreachable or
+rate-limited GitHub fails the build — `download-maven-plugin` defaults `failOnError` to `true`, and lowering
+it does not help: a missing `configLocation`/`<ruleset>` is a *configuration* error, which
+`failOnViolation=false` does not absorb.
+
+So the accurate promise is narrower than "a parent bump never reddens a repository": **no finding will turn a
+repository red**, but the ruleset fetch is a new infrastructure dependency. A repository that cannot accept
+that sets `octopus.quality.skip` until the rulesets ship as a resolved artifact — tracked in the repository's
+issues. One exception to the skip: the detekt config fetch is not gated on it, because
+`detekt-maven-plugin` validates its config path before honouring skip.
+
 ### SpotBugs is Java-only
 
 `octopus-kotlin-quality` sets `spotbugs.skip=true`, matching the Gradle plugin, which runs SpotBugs
@@ -62,7 +76,7 @@ deliberately leaves open — the profiles work on whatever JDK ≥ 11 a reposito
 
 | Property | Default | Meaning |
 |---|---|---|
-| `octopus.quality.failOnViolation` | `false` | Whether a finding fails the build. Same default as the Gradle plugin: a parent bump never reddens a repository; reports are produced on every build; flip to `true` per repository once it is clean. |
+| `octopus.quality.failOnViolation` | `false` | Whether a **finding** fails the build. Same default as the Gradle plugin: reports are produced on every build, and no finding turns a repository red. Flip to `true` per repository, optionally with the ratchet below. It does not absorb configuration or infrastructure errors — see *Network dependency*. |
 | `octopus.quality.skip` | `false` | Turns every gate off. Works from the consumer POM, from `-D` and from `settings.xml`. |
 | `octopus.quality.maxViolations.checkstyle` / `.pmd` / `.spotbugs` | `0` | Ratchet: how many **existing** violations a repository may carry while strict mode is on. |
 | `octopus.quality.maxIssues.detekt` | `0` | The same, for detekt. |
@@ -173,6 +187,9 @@ were never the problem, the wiring was. The CI build runs them on every push and
 | `skip-disables` | `octopus.quality.skip` set in the consumer POM disables everything and writes no report |
 | `consumer-gate-preserved` | a consumer's own PMD gate keeps its own failing semantics; the parent does not downgrade it |
 | `pit-opt-in` | PIT does not execute without `-Poctopus-mutation` |
+| `spotbugs-detected` | SpotBugs actually analyses a Java module and reports a finding, rather than going inert unnoticed |
+| `coverage-gate` | a real test produces `jacoco.exec`, a report mentioning the class, and a coverage check evaluated against real data |
+| `kotlin-no-tests` | a Kotlin module with no test tree still gets a detekt report |
 | `ratchet-allows-baseline` | strict mode with a frozen backlog passes while still reporting, so a repository can enable strict before the backlog is gone |
 | `kotlin-gates` | ktlint scans `src/test/kotlin` with Kotlin declared only via `<sourceDirs>`; detekt reports; SpotBugs is off for a Kotlin module |
 

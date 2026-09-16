@@ -64,13 +64,16 @@
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
         <equalsverifier.version>3.15.6</equalsverifier.version>
 
-        <!-- Single source of truth for rulesets: the config files bundled in the Gradle convention plugin,
-             pinned to an octopus-base tag. Override to test a ruleset change before it is tagged. -->
+        <!-- Single source of truth for rulesets: the config files bundled in the Gradle convention plugin.
+             Pinned to a COMMIT, not a tag: a tag is movable while the download cache keeps the first
+             response forever, so a retagged v3.0.1 would give clean and cached builders different rules
+             under the same parent version. The commit below is octopus-base v3.0.1. Override to test a
+             ruleset change before it is tagged. -->
         <octopus.quality.config.dir>${project.build.directory}/octopus-quality</octopus.quality.config.dir>
         <!-- The pinned tag URL is immutable, so the download cache is safe. Set true when pointing
              octopus.quality.config.url at a moving branch, or the first-fetched copy is reused forever. -->
         <octopus.quality.config.overwrite>false</octopus.quality.config.overwrite>
-        <octopus.quality.config.url>https://raw.githubusercontent.com/octopusden/octopus-base/v3.0.1/gradle-quality-plugin/src/main/resources/org/octopusden/octopus/quality/config</octopus.quality.config.url>
+        <octopus.quality.config.url>https://raw.githubusercontent.com/octopusden/octopus-base/b26cc47d6af3d986e11a93a4de9e9669d44157a0/gradle-quality-plugin/src/main/resources/org/octopusden/octopus/quality/config</octopus.quality.config.url>
         <!-- Off switch. A plugin parameter, not a profile activation property: Maven activates profiles
              from system and user properties only, so a POM-level property cannot deactivate a profile.
              Works from the POM, from -D and from settings.xml. -->
@@ -608,7 +611,9 @@
                                     <goal>add-source</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${octopus.quality.skip}</skip>
+                                    <!-- No <skip>: add-source/add-test-source do not declare that parameter, so
+                                         the element was silently ignored. Registering a source root runs no
+                                         analyzer, so it is harmless when quality is skipped. -->
                                     <sources>
                                         <source>${basedir}/src/main/kotlin</source>
                                     </sources>
@@ -621,7 +626,6 @@
                                     <goal>add-test-source</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${octopus.quality.skip}</skip>
                                     <sources>
                                         <source>${basedir}/src/test/kotlin</source>
                                     </sources>
@@ -669,9 +673,12 @@
                                     <skip>${octopus.quality.skip}</skip>
                                     <config>${octopus.quality.config.dir}/detekt.yml</config>
                                     <buildUponDefaultConfig>true</buildUponDefaultConfig>
-                                    <!-- src/main and src/test, not src: Kotlin also lives under src/main/java
-                                         in some repos, while plain src would walk resources and src/it. -->
-                                    <input>${basedir}/src/main,${basedir}/src/test</input>
+                                    <!-- ${basedir}/src, not a main+test list: detekt-maven-plugin 1.23.8 runs
+                                         only when EVERY listed input directory exists, so a Kotlin module with
+                                         no test tree silently produced no report at all — main sources
+                                         included, at INFO level. One always-present root avoids that; Kotlin
+                                         under src/main/java is still covered, and non-.kt files are ignored. -->
+                                    <input>${basedir}/src</input>
                                     <failBuildOnMaxIssuesReached>${octopus.quality.failOnViolation}</failBuildOnMaxIssuesReached>
                                     <maxIssues>${octopus.quality.maxIssues.detekt}</maxIssues>
                                     <report>
