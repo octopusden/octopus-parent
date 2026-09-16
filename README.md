@@ -50,8 +50,7 @@ it does not help: a missing `configLocation`/`<ruleset>` is a *configuration* er
 
 So the accurate promise is narrower than "a parent bump never reddens a repository": **no finding will turn a
 repository red**, but the ruleset fetch is a new infrastructure dependency. A repository that cannot accept
-that sets `octopus.quality.skip` until the rulesets ship as a resolved artifact — tracked in the repository's
-issues. One exception to the skip: the detekt config fetch is not gated on it, because
+that sets `octopus.quality.skip` until the rulesets ship as a resolved artifact — tracked in #6. One exception to the skip: the detekt config fetch is not gated on it, because
 `detekt-maven-plugin` validates its config path before honouring skip.
 
 ### SpotBugs is Java-only
