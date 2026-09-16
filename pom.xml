@@ -766,6 +766,11 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-invoker-plugin</artifactId>
                         <version>${maven-invoker-plugin.version}</version>
+                        <!-- Never inherited: maven-invoker-plugin drives the fixtures, and the fixtures
+                             inherit this POM. Without this they each tried to run the harness on
+                             themselves and died installing a jar that does not exist yet. The same would
+                             happen to any consumer that activated -Pit. -->
+                        <inherited>false</inherited>
                         <configuration>
                             <projectsDirectory>${basedir}/src/it</projectsDirectory>
                             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
@@ -778,8 +783,13 @@
                             </goals>
                         </configuration>
                         <executions>
+                            <!-- prepare-package, for the same reason the gates use it: the shared CI
+                                 workflow runs `mvn package`, while these goals default to
+                                 pre-integration-test / integration-test, which `package` never reaches.
+                                 Measured: `mvn -Pit package` ran zero fixtures before this binding. -->
                             <execution>
                                 <id>octopus-gate-contract</id>
+                                <phase>prepare-package</phase>
                                 <goals>
                                     <goal>install</goal>
                                     <goal>run</goal>
