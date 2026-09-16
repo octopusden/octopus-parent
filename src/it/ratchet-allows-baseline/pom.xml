@@ -8,9 +8,9 @@
         <version>@project.version@</version>
     </parent>
     <groupId>org.octopusden.octopus.it</groupId>
-    <artifactId>strict-fails</artifactId>
+    <artifactId>ratchet-allows-baseline</artifactId>
     <version>1.0</version>
-    <name>strict-fails</name>
+    <name>ratchet-allows-baseline</name>
     <description>octopus-parent quality-gate fixture</description>
     <url>https://octopusden.org</url>
     <licenses><license><name>The Apache License, Version 2.0</name><url>http://www.apache.org/licenses/LICENSE-2.0.txt</url></license></licenses>
@@ -21,9 +21,14 @@
         <url>https://github.com/octopusden/octopus-parent</url>
     </scm>
     <properties>
+        <!-- Strict mode ON, with the existing backlog frozen: the build must pass, and any NEW violation
+             beyond the recorded counts must fail it. -->
         <octopus.quality.failOnViolation>true</octopus.quality.failOnViolation>
-        <!-- Coverage is a separate gate; without this the fixture would fail on an empty jacoco.exec and
-             pass for the wrong reason. -->
+        <octopus.quality.maxViolations.checkstyle>100</octopus.quality.maxViolations.checkstyle>
+        <octopus.quality.maxViolations.pmd>100</octopus.quality.maxViolations.pmd>
+        <octopus.quality.maxViolations.spotbugs>100</octopus.quality.maxViolations.spotbugs>
+        <!-- The fixture carries no tests; the coverage floor is a separate gate and would fail the build
+             for an unrelated reason, hiding what this fixture is about. -->
         <octopus.coverage.minimumLine>0.00</octopus.coverage.minimumLine>
     </properties>
 </project>

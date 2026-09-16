@@ -86,6 +86,15 @@
              false): a parent bump never reddens a consumer, reports are produced on every build, and each repo
              flips this to true once it is clean. Measured on 2026-09-16 no consumer is clean yet. -->
         <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
+        <!-- Ratchet: the number of EXISTING violations a repository is allowed to carry while strict mode
+             is on, so a repo can enable failOnViolation before the backlog is gone and still block NEW debt.
+             Set each to the current count, then lower it as findings are fixed; never raise it. Only
+             meaningful when octopus.quality.failOnViolation=true. ktlint has no equivalent parameter, so it
+             stays all-or-nothing — acceptable because `mvn initialize ktlint:format` fixes nearly all of it. -->
+        <octopus.quality.maxViolations.checkstyle>0</octopus.quality.maxViolations.checkstyle>
+        <octopus.quality.maxViolations.pmd>0</octopus.quality.maxViolations.pmd>
+        <octopus.quality.maxViolations.spotbugs>0</octopus.quality.maxViolations.spotbugs>
+        <octopus.quality.maxIssues.detekt>0</octopus.quality.maxIssues.detekt>
         <!-- Per-module line-coverage floor, same default as the Gradle plugin (coverage.minimumLineCoverage). -->
         <octopus.coverage.minimumLine>0.10</octopus.coverage.minimumLine>
         <!-- Mutation-score floor for the octopus-mutation profile. 0 = report only; raise it as a ratchet. -->
@@ -450,6 +459,7 @@
                                     <consoleOutput>true</consoleOutput>
                                     <violationSeverity>warning</violationSeverity>
                                     <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
+                                    <maxAllowedViolations>${octopus.quality.maxViolations.checkstyle}</maxAllowedViolations>
                                 </configuration>
                             </execution>
                         </executions>
@@ -479,6 +489,7 @@
                                 </goals>
                                 <configuration>
                                     <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
+                                    <maxAllowedViolations>${octopus.quality.maxViolations.pmd}</maxAllowedViolations>
                                 </configuration>
                             </execution>
                         </executions>
@@ -504,6 +515,7 @@
                                 </goals>
                                 <configuration>
                                     <failOnError>${octopus.quality.failOnViolation}</failOnError>
+                                    <maxAllowedViolations>${octopus.quality.maxViolations.spotbugs}</maxAllowedViolations>
                                 </configuration>
                             </execution>
                         </executions>
@@ -661,6 +673,7 @@
                                          in some repos, while plain src would walk resources and src/it. -->
                                     <input>${basedir}/src/main,${basedir}/src/test</input>
                                     <failBuildOnMaxIssuesReached>${octopus.quality.failOnViolation}</failBuildOnMaxIssuesReached>
+                                    <maxIssues>${octopus.quality.maxIssues.detekt}</maxIssues>
                                     <report>
                                         <report>xml:${project.build.directory}/detekt/detekt.xml</report>
                                         <report>html:${project.build.directory}/detekt/detekt.html</report>

@@ -64,6 +64,8 @@ deliberately leaves open — the profiles work on whatever JDK ≥ 11 a reposito
 |---|---|---|
 | `octopus.quality.failOnViolation` | `false` | Whether a finding fails the build. Same default as the Gradle plugin: a parent bump never reddens a repository; reports are produced on every build; flip to `true` per repository once it is clean. |
 | `octopus.quality.skip` | `false` | Turns every gate off. Works from the consumer POM, from `-D` and from `settings.xml`. |
+| `octopus.quality.maxViolations.checkstyle` / `.pmd` / `.spotbugs` | `0` | Ratchet: how many **existing** violations a repository may carry while strict mode is on. |
+| `octopus.quality.maxIssues.detekt` | `0` | The same, for detekt. |
 | `octopus.coverage.minimumLine` | `0.10` | Per-module JaCoCo line-coverage floor (`BUNDLE` / `LINE` / `COVEREDRATIO`). |
 | `octopus.mutation.threshold` | `0` | PIT mutation-score floor. Raise it as a ratchet, never lower it. |
 | `octopus.quality.config.url` | octopus-base tag | Base URL of the ruleset files. |
@@ -134,6 +136,27 @@ executions to a later phase.
    ktlint cannot rewrite.
 3. Set `<octopus.quality.failOnViolation>true</octopus.quality.failOnViolation>` in the repository POM.
 
+Step 2 does not have to come first. A repository that cannot clear the backlog now can turn strict mode on
+immediately and **freeze** what it has, so that no *new* debt gets in:
+
+```xml
+<octopus.quality.failOnViolation>true</octopus.quality.failOnViolation>
+<octopus.quality.maxViolations.checkstyle>17</octopus.quality.maxViolations.checkstyle>
+<octopus.quality.maxViolations.pmd>13</octopus.quality.maxViolations.pmd>
+<octopus.quality.maxViolations.spotbugs>57</octopus.quality.maxViolations.spotbugs>
+```
+
+Set each number to the repository's current count, then lower it as findings are fixed; never raise it — that
+is what makes it a ratchet rather than a permanent exemption. Reaching `0` everywhere is the same state as
+step 3 with no backlog.
+
+ktlint has no such parameter and stays all-or-nothing, which is acceptable because
+`mvn initialize ktlint:format` removes nearly all of its findings in one commit. Coverage has its own floor
+(`octopus.coverage.minimumLine`) and is not covered by the ratchet.
+
+Report-only is a starting state, not an end state: each repository needs an owner and a date for reaching
+either a clean build or a frozen baseline.
+
 Also in `dependencyManagement`: `nl.jqno.equalsverifier:equalsverifier-nodep` (test scope), for
 equals/hashCode contract tests — the linters above only check that both methods are overridden.
 
@@ -150,6 +173,7 @@ were never the problem, the wiring was. The CI build runs them on every push and
 | `skip-disables` | `octopus.quality.skip` set in the consumer POM disables everything and writes no report |
 | `consumer-gate-preserved` | a consumer's own PMD gate keeps its own failing semantics; the parent does not downgrade it |
 | `pit-opt-in` | PIT does not execute without `-Poctopus-mutation` |
+| `ratchet-allows-baseline` | strict mode with a frozen backlog passes while still reporting, so a repository can enable strict before the backlog is gone |
 | `kotlin-gates` | ktlint scans `src/test/kotlin` with Kotlin declared only via `<sourceDirs>`; detekt reports; SpotBugs is off for a Kotlin module |
 
 Each fixture was verified to fail when its defect is reintroduced, not merely to pass today.
