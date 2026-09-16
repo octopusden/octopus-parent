@@ -19,7 +19,7 @@ checks, and — from 2.1.0 — the same quality gates the Gradle repositories ge
 |---|---|---|
 | `octopus-quality` | build JDK ≥ 11 | enforcer (`banDuplicatePomDependencyVersions`), Checkstyle, PMD, SpotBugs, JaCoCo report + line-coverage check |
 | `octopus-kotlin-quality` | build JDK ≥ 11 **and** `src/main/kotlin` exists in the module | detekt, ktlint; turns SpotBugs off for that module |
-| `octopus-mutation` | `-Poctopus-mutation`, build JDK ≥ 11 | PIT mutation testing |
+| `octopus-mutation` | `-Poctopus-mutation` only (opt-in; needs JDK ≥ 11) | PIT mutation testing |
 
 Rulesets are the files bundled in the Gradle convention plugin, pinned to an octopus-base tag
 (`octopus.quality.config.url`), so a Maven and a Gradle repository judge code by identical rules.
@@ -67,7 +67,7 @@ deliberately leaves open — the profiles work on whatever JDK ≥ 11 a reposito
 | `octopus.coverage.minimumLine` | `0.10` | Per-module JaCoCo line-coverage floor (`BUNDLE` / `LINE` / `COVEREDRATIO`). |
 | `octopus.mutation.threshold` | `0` | PIT mutation-score floor. Raise it as a ratchet, never lower it. |
 | `octopus.quality.config.url` | octopus-base tag | Base URL of the ruleset files. |
-| `octopus.quality.config.overwrite` | `false` | Re-download the rulesets every build. Set it when pointing `config.url` at a moving branch; the pinned tag URL is immutable, so the cache is safe. |
+| `octopus.quality.config.overwrite` | `false` | Re-download the rulesets every build, bypassing the download plugin's own `~/.m2` cache as well. Set it when pointing `config.url` at a moving branch; the pinned tag URL is immutable, so the cache is safe. |
 
 `octopus.quality.skip` is a plugin parameter, not a profile activation condition, and deliberately
 so: Maven evaluates profile property activation against system and user properties only, so a
@@ -89,8 +89,12 @@ even when a repository hands them to `kotlin-maven-plugin` through `<sourceDirs>
 ### Mutation testing
 
 ```bash
-mvn -Poctopus-mutation package
+mvn -Poctopus-mutation verify
 ```
+
+`verify`, not `package`: PIT is bound to `verify` deliberately — it re-runs the covering tests once
+per mutant, so it stays off the `package` path the gates use. The profile is opt-in only and has no
+`<activation>`; it needs a JDK 11+ build (pitest-maven 1.30.0 is Java 11 bytecode).
 
 `pitest-junit5-plugin` declares `junit-platform-launcher` as `provided` and, unlike surefire, PIT
 does not auto-provision it. A repository whose test classpath has no launcher adds
@@ -132,6 +136,23 @@ executions to a later phase.
 
 Also in `dependencyManagement`: `nl.jqno.equalsverifier:equalsverifier-nodep` (test scope), for
 equals/hashCode contract tests — the linters above only check that both methods are overridden.
+
+## The gate contract is tested
+
+`mvn -Pit verify` (JDK 11+) runs the fixtures in `src/it` as real consumer projects. Each asserts one
+promise this README makes, and each encodes a defect that actually shipped during review — the rules
+were never the problem, the wiring was. The CI build runs them on every push and pull request.
+
+| Fixture | Asserts |
+|---|---|
+| `violation-detected` | report-only finds and reports violations without failing; the org ruleset and `includeTests=true` reach the **forked** analysis goals |
+| `strict-fails` | `failOnViolation=true` fails the build |
+| `skip-disables` | `octopus.quality.skip` set in the consumer POM disables everything and writes no report |
+| `consumer-gate-preserved` | a consumer's own PMD gate keeps its own failing semantics; the parent does not downgrade it |
+| `pit-opt-in` | PIT does not execute without `-Poctopus-mutation` |
+| `kotlin-gates` | ktlint scans `src/test/kotlin` with Kotlin declared only via `<sourceDirs>`; detekt reports; SpotBugs is off for a Kotlin module |
+
+Each fixture was verified to fail when its defect is reintroduced, not merely to pass today.
 
 ## Release checks
 

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.octopusden.octopus</groupId>
+        <artifactId>octopus-parent</artifactId>
+        <version>@project.version@</version>
+    </parent>
+    <groupId>org.octopusden.octopus.it</groupId>
+    <artifactId>violation-detected</artifactId>
+    <version>1.0</version>
+    <name>violation-detected</name>
+    <description>octopus-parent quality-gate fixture</description>
+    <url>https://octopusden.org</url>
+    <licenses><license><name>The Apache License, Version 2.0</name><url>http://www.apache.org/licenses/LICENSE-2.0.txt</url></license></licenses>
+    <developers><developer><id>octopus</id><name>octopus</name></developer></developers>
+    <scm>
+        <connection>scm:git:git://github.com/octopusden/octopus-parent.git</connection>
+        <developerConnection>scm:git:ssh://github.com:octopusden/octopus-parent.git</developerConnection>
+        <url>https://github.com/octopusden/octopus-parent</url>
+    </scm>
+</project>

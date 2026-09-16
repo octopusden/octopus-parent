@@ -41,6 +41,7 @@
 
         <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <maven-invoker-plugin.version>3.9.1</maven-invoker-plugin.version>
         <maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
 
         <!-- Quality gates. Tool engines are pinned to the same versions as the Gradle convention plugin
@@ -379,6 +380,9 @@
                                     <url>${octopus.quality.config.url}/checkstyle.xml</url>
                                     <outputDirectory>${octopus.quality.config.dir}</outputDirectory>
                                     <overwrite>${octopus.quality.config.overwrite}</overwrite>
+                                    <!-- overwrite alone only replaces the file in target/; the plugin would
+                                         still copy the previous revision out of its own ~/.m2 cache. -->
+                                    <skipCache>${octopus.quality.config.overwrite}</skipCache>
                                 </configuration>
                             </execution>
                             <execution>
@@ -392,6 +396,9 @@
                                     <url>${octopus.quality.config.url}/pmd-ruleset.xml</url>
                                     <outputDirectory>${octopus.quality.config.dir}</outputDirectory>
                                     <overwrite>${octopus.quality.config.overwrite}</overwrite>
+                                    <!-- overwrite alone only replaces the file in target/; the plugin would
+                                         still copy the previous revision out of its own ~/.m2 cache. -->
+                                    <skipCache>${octopus.quality.config.overwrite}</skipCache>
                                 </configuration>
                             </execution>
                         </executions>
@@ -450,6 +457,19 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-pmd-plugin</artifactId>
+                        <!-- WHAT to analyse sits at plugin level, because `pmd:check` FORKS `pmd:pmd` and the
+                             fork does not read the execution's configuration: with the ruleset on the
+                             execution, the fork silently analysed with PMD's DEFAULT rules and
+                             includeTests=false. Only the fail switch stays on the execution, so a
+                             consumer's own PMD executions keep their own semantics. -->
+                        <configuration>
+                            <rulesets>
+                                <ruleset>${octopus.quality.config.dir}/pmd-ruleset.xml</ruleset>
+                            </rulesets>
+                            <includeTests>true</includeTests>
+                            <printFailingErrors>true</printFailingErrors>
+                            <targetJdk>${maven.compiler.target}</targetJdk>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>octopus-pmd</id>
@@ -458,14 +478,6 @@
                                     <goal>check</goal>
                                 </goals>
                                 <configuration>
-                                    <!-- skip via the pmd.skip property (see <properties>) — the forked
-                                         analysis goal does not read this execution's configuration. -->
-                                    <rulesets>
-                                        <ruleset>${octopus.quality.config.dir}/pmd-ruleset.xml</ruleset>
-                                    </rulesets>
-                                    <includeTests>true</includeTests>
-                                    <printFailingErrors>true</printFailingErrors>
-                                    <targetJdk>${maven.compiler.target}</targetJdk>
                                     <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
                                 </configuration>
                             </execution>
@@ -474,6 +486,15 @@
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
+                        <!-- Plugin level for the same reason as PMD: `spotbugs:check` forks `spotbugs:spotbugs`,
+                             which otherwise analysed with includeTests=false. skip comes from the spotbugs.skip
+                             property (see <properties>), which the fork also reads; the Kotlin profile sets it
+                             true, matching the Gradle plugin (SubprojectConfigurer.kt:83 — Java and no Kotlin).
+                             effort/threshold left at engine defaults, like the Gradle plugin. -->
+                        <configuration>
+                            <includeTests>true</includeTests>
+                            <xmlOutput>true</xmlOutput>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>octopus-spotbugs</id>
@@ -482,14 +503,6 @@
                                     <goal>check</goal>
                                 </goals>
                                 <configuration>
-                                    <!-- skip comes from the spotbugs.skip property (see <properties>), which the
-                                         forked analysis goal also reads. The Kotlin profile sets it true, matching
-                                         the Gradle plugin, which runs SpotBugs only on a module with Java and no
-                                         Kotlin (SubprojectConfigurer.kt:83) — on Kotlin bytecode it is almost all
-                                         false positives (lateinit, DSL getters, synthetic accessors). -->
-                                    <!-- effort/threshold left at engine defaults, like the Gradle plugin -->
-                                    <includeTests>true</includeTests>
-                                    <xmlOutput>true</xmlOutput>
                                     <failOnError>${octopus.quality.failOnViolation}</failOnError>
                                 </configuration>
                             </execution>
@@ -623,6 +636,9 @@
                                     <url>${octopus.quality.config.url}/detekt.yml</url>
                                     <outputDirectory>${octopus.quality.config.dir}</outputDirectory>
                                     <overwrite>${octopus.quality.config.overwrite}</overwrite>
+                                    <!-- overwrite alone only replaces the file in target/; the plugin would
+                                         still copy the previous revision out of its own ~/.m2 cache. -->
+                                    <skipCache>${octopus.quality.config.overwrite}</skipCache>
                                 </configuration>
                             </execution>
                         </executions>
@@ -691,9 +707,10 @@
         -->
         <profile>
             <id>octopus-mutation</id>
-            <activation>
-                <jdk>[11,)</jdk>
-            </activation>
+            <!-- No <activation>: any activation block makes the profile automatic, and a JDK condition
+                 here turned `mvn verify` on JDK 11+ into a mutation run. PIT re-executes the covering
+                 tests once per mutant, so it stays strictly opt-in via -Poctopus-mutation. The JDK 11+
+                 requirement (pitest-maven 1.30.0 is Java 11 bytecode) is documented, not activated. -->
             <build>
                 <plugins>
                     <plugin>
@@ -728,6 +745,45 @@
                                     <timestampedReports>false</timestampedReports>
                                     <mutationThreshold>${octopus.mutation.threshold}</mutationThreshold>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!--
+          Regression fixtures for the gate contract itself. `mvn -Pit verify` on a JDK 11+ build runs each
+          fixture under src/it as a real consumer project and asserts the behaviour the README promises.
+          Every one of these encodes a defect that actually shipped in review: the rules were never the
+          problem, the wiring was.
+        -->
+        <profile>
+            <id>it</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-invoker-plugin</artifactId>
+                        <version>${maven-invoker-plugin.version}</version>
+                        <configuration>
+                            <projectsDirectory>${basedir}/src/it</projectsDirectory>
+                            <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                            <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+                            <postBuildHookScript>verify</postBuildHookScript>
+                            <streamLogs>false</streamLogs>
+                            <showErrors>true</showErrors>
+                            <goals>
+                                <goal>verify</goal>
+                            </goals>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>octopus-gate-contract</id>
+                                <goals>
+                                    <goal>install</goal>
+                                    <goal>run</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>
