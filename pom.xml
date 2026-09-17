@@ -40,12 +40,82 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
-        <maven-pmd-plugin.version>3.19.0</maven-pmd-plugin.version>
-        <findbugs-maven-plugin.version>3.0.5</findbugs-maven-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-        <maven-checkstyle-plugin.version>3.2.0</maven-checkstyle-plugin.version>
+        <maven-invoker-plugin.version>3.9.1</maven-invoker-plugin.version>
         <maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
+
+        <!-- Quality gates. Tool engines are pinned to the same versions as the Gradle convention plugin
+             (octopus-base/gradle-quality-plugin/gradle.properties) so Maven and Gradle repos judge code
+             by identical rules. The analyzers need a JDK 11+ runtime, so they live in profiles activated
+             on JDK 11+ only (see <profiles>); a JDK 8 build sees none of this. The gates run at
+             prepare-package, because the shared CI workflow invokes `mvn package`. -->
+        <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+        <checkstyle.version>10.17.0</checkstyle.version>
+        <maven-pmd-plugin.version>3.21.2</maven-pmd-plugin.version>
+        <spotbugs-maven-plugin.version>4.9.8.0</spotbugs-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
+        <detekt-maven-plugin.version>1.23.8</detekt-maven-plugin.version>
+        <ktlint-maven-plugin.version>3.7.1</ktlint-maven-plugin.version>
+        <!-- 3.4.0, not 3.6.0: build-helper 3.5.0+ declares requiredMavenVersion 3.9.0, which would put the
+             real floor above the [3.6.3,) this POM enforces. 3.4.0 needs only 3.2.5. -->
+        <build-helper-maven-plugin.version>3.4.0</build-helper-maven-plugin.version>
+        <download-maven-plugin.version>1.13.0</download-maven-plugin.version>
+        <pitest-maven.version>1.30.0</pitest-maven.version>
+        <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
+        <equalsverifier.version>3.15.6</equalsverifier.version>
+
+        <!-- Single source of truth for rulesets: the config files bundled in the Gradle convention plugin.
+             Pinned to a COMMIT, not a tag: a tag is movable while the download cache keeps the first
+             response forever, so a retagged v3.0.1 would give clean and cached builders different rules
+             under the same parent version. The commit below is octopus-base v3.0.1. Override to test a
+             ruleset change before it is tagged. -->
+        <octopus.quality.config.dir>${project.build.directory}/octopus-quality</octopus.quality.config.dir>
+        <!-- The pinned tag URL is immutable, so the download cache is safe. Set true when pointing
+             octopus.quality.config.url at a moving branch, or the first-fetched copy is reused forever. -->
+        <octopus.quality.config.overwrite>false</octopus.quality.config.overwrite>
+        <octopus.quality.config.url>https://raw.githubusercontent.com/octopusden/octopus-base/b26cc47d6af3d986e11a93a4de9e9669d44157a0/gradle-quality-plugin/src/main/resources/org/octopusden/octopus/quality/config</octopus.quality.config.url>
+        <!-- Off switch. A plugin parameter, not a profile activation property: Maven activates profiles
+             from system and user properties only, so a POM-level property cannot deactivate a profile.
+             Works from the POM, from -D and from settings.xml. -->
+        <octopus.quality.skip>false</octopus.quality.skip>
+        <!-- SpotBugs and PMD need their own user property rather than an execution <skip>: `spotbugs:check`
+             and `pmd:check` FORK the analysis goal, and the fork does not inherit the execution's
+             configuration — verified both ways (the analysis ran and wrote spotbugsXml.xml / pmd.xml with the
+             execution skipped). Checkstyle, JaCoCo, ktlint and detekt do not fork and are skipped per
+             execution. The Kotlin profile sets spotbugs.skip to true. -->
+        <spotbugs.skip>${octopus.quality.skip}</spotbugs.skip>
+        <pmd.skip>${octopus.quality.skip}</pmd.skip>
+        <!-- Whether a finding fails the build. Same default as the Gradle plugin (java/kotlin.failOnViolation =
+             false): a parent bump never reddens a consumer, reports are produced on every build, and each repo
+             flips this to true once it is clean. Measured on 2026-09-16 no consumer is clean yet. -->
+        <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
+        <!-- Ratchet: the number of EXISTING violations a repository is allowed to carry while strict mode
+             is on, so a repo can enable failOnViolation before the backlog is gone and still block NEW debt.
+             Set each to the current count, then lower it as findings are fixed; never raise it. Only
+             meaningful when octopus.quality.failOnViolation=true. ktlint has no equivalent parameter, so it
+             stays all-or-nothing — acceptable because `mvn initialize ktlint:format` fixes nearly all of it. -->
+        <octopus.quality.maxViolations.checkstyle>0</octopus.quality.maxViolations.checkstyle>
+        <octopus.quality.maxViolations.pmd>0</octopus.quality.maxViolations.pmd>
+        <octopus.quality.maxViolations.spotbugs>0</octopus.quality.maxViolations.spotbugs>
+        <octopus.quality.maxIssues.detekt>0</octopus.quality.maxIssues.detekt>
+        <!-- Per-module line-coverage floor, same default as the Gradle plugin (coverage.minimumLineCoverage). -->
+        <octopus.coverage.minimumLine>0.10</octopus.coverage.minimumLine>
+        <!-- Mutation-score floor for the octopus-mutation profile. 0 = report only; raise it as a ratchet. -->
+        <octopus.mutation.threshold>0</octopus.mutation.threshold>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Verifies the equals/hashCode contract over every field combination; the linters above only
+                 check that both methods are overridden. Consumers add it without a version. -->
+            <dependency>
+                <groupId>nl.jqno.equalsverifier</groupId>
+                <artifactId>equalsverifier-nodep</artifactId>
+                <version>${equalsverifier.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <resources>
@@ -108,6 +178,9 @@
                             </goals>
                             <configuration>
                                 <rules>
+                                    <requireMavenVersion>
+                                        <version>[3.6.3,)</version>
+                                    </requireMavenVersion>
                                     <requireProperty>
                                         <property>project.model.name</property>
                                         <message>Maven Central requires explicit &lt;name&gt; in pom.xml</message>
@@ -164,6 +237,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${build-helper-maven-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>add-generated-sources</id>
@@ -178,10 +252,13 @@
                         </execution>
                     </executions>
                 </plugin>
+                <!-- Analyzer plugins: versions only. All configuration lives in the JDK-gated profiles below, so a
+                     consumer that already invokes checkstyle/pmd itself on a JDK 8 build sees nothing but a version
+                     bump — the Java 11 Checkstyle engine in particular must never reach a JDK 8 build. -->
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>${findbugs-maven-plugin.version}</version>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${maven-checkstyle-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -189,9 +266,34 @@
                     <version>${maven-pmd-plugin.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>${maven-checkstyle-plugin.version}</version>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${spotbugs-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.ozsie</groupId>
+                    <artifactId>detekt-maven-plugin</artifactId>
+                    <version>${detekt-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.gantsign.maven</groupId>
+                    <artifactId>ktlint-maven-plugin</artifactId>
+                    <version>${ktlint-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.googlecode.maven-download-plugin</groupId>
+                    <artifactId>download-maven-plugin</artifactId>
+                    <version>${download-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.pitest</groupId>
+                    <artifactId>pitest-maven</artifactId>
+                    <version>${pitest-maven.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -238,6 +340,487 @@
         </plugins>
     </build>
     <profiles>
+        <!--
+          Quality gates.
+
+          PHASE: prepare-package, not verify. The shared CI workflow
+          (octopus-base/.github/workflows/common-java-maven-build.yml) runs `mvn package`, and its
+          mvn-parameters input is appended AFTER the goal, so a consumer cannot add a phase either.
+          A gate bound to verify would never run on a push or a pull request — it would first execute
+          inside the release job's `mvn deploy`, mid-publish. octopus-wl-tool documents the same trap
+          in its own POM. prepare-package runs after test and before package, so it is reached by
+          package, verify, install and deploy alike.
+
+          CONFIGURATION lives on each execution, never on the plugin. Plugin-level configuration
+          applies to every execution of that plugin INCLUDING a consumer's own, and Maven's merge hands
+          the parent's value to any element the child did not set. octopus-wl-tool declares its own
+          ktlint and detekt executions and relies on their default failOnViolation=true; plugin-level
+          config here would silently downgrade that repository's working gate to a report.
+
+          SKIP is a plugin parameter, not a profile activation condition: Maven evaluates profile
+          property activation against system and user properties only, so
+          <octopus.quality.skip>true</octopus.quality.skip> in a consumer POM cannot deactivate a
+          profile (verified: all twelve executions still ran). Wiring ${octopus.quality.skip} into each
+          plugin instead works from the POM, from -D and from settings.xml.
+        -->
+        <profile>
+            <id>octopus-quality</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <executions>
+                            <!-- All three rulesets through one mechanism, fetched once at initialize into
+                                 target/. Previously Checkstyle and PMD resolved their URL live on every
+                                 execution while detekt.yml was cached by URL forever, so overriding
+                                 octopus.quality.config.url to a moving branch let the three tools judge the
+                                 same code by different revisions. The pinned tag URL is immutable, so the
+                                 cache is safe; pass -Doctopus.quality.config.overwrite=true when pointing at
+                                 a branch. -->
+                            <execution>
+                                <id>octopus-fetch-quality-config</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${octopus.quality.skip}</skip>
+                                    <url>${octopus.quality.config.url}/checkstyle.xml</url>
+                                    <outputDirectory>${octopus.quality.config.dir}</outputDirectory>
+                                    <overwrite>${octopus.quality.config.overwrite}</overwrite>
+                                    <!-- overwrite alone only replaces the file in target/; the plugin would
+                                         still copy the previous revision out of its own ~/.m2 cache. -->
+                                    <skipCache>${octopus.quality.config.overwrite}</skipCache>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>octopus-fetch-pmd-config</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${octopus.quality.skip}</skip>
+                                    <url>${octopus.quality.config.url}/pmd-ruleset.xml</url>
+                                    <outputDirectory>${octopus.quality.config.dir}</outputDirectory>
+                                    <overwrite>${octopus.quality.config.overwrite}</overwrite>
+                                    <!-- overwrite alone only replaces the file in target/; the plugin would
+                                         still copy the previous revision out of its own ~/.m2 cache. -->
+                                    <skipCache>${octopus.quality.config.overwrite}</skipCache>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>octopus-enforcer-gate</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${octopus.quality.skip}</skip>
+                                    <fail>${octopus.quality.failOnViolation}</fail>
+                                    <rules>
+                                        <!-- dependencyConvergence is deliberately absent: on a legacy consumer it
+                                             fails on dozens of transitive Maven/Plexus splits and would block
+                                             adoption. It stays available as `mvn enforcer:enforce`. -->
+                                        <banDuplicatePomDependencyVersions/>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.puppycrawl.tools</groupId>
+                                <artifactId>checkstyle</artifactId>
+                                <version>${checkstyle.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>octopus-checkstyle</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${octopus.quality.skip}</skip>
+                                    <configLocation>${octopus.quality.config.dir}/checkstyle.xml</configLocation>
+                                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                                    <consoleOutput>true</consoleOutput>
+                                    <violationSeverity>warning</violationSeverity>
+                                    <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
+                                    <maxAllowedViolations>${octopus.quality.maxViolations.checkstyle}</maxAllowedViolations>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-pmd-plugin</artifactId>
+                        <!-- WHAT to analyse sits at plugin level, because `pmd:check` FORKS `pmd:pmd` and the
+                             fork does not read the execution's configuration: with the ruleset on the
+                             execution, the fork silently analysed with PMD's DEFAULT rules and
+                             includeTests=false. Only the fail switch stays on the execution, so a
+                             consumer's own PMD executions keep their own semantics. -->
+                        <configuration>
+                            <rulesets>
+                                <ruleset>${octopus.quality.config.dir}/pmd-ruleset.xml</ruleset>
+                            </rulesets>
+                            <includeTests>true</includeTests>
+                            <printFailingErrors>true</printFailingErrors>
+                            <targetJdk>${maven.compiler.target}</targetJdk>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>octopus-pmd</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
+                                    <maxAllowedViolations>${octopus.quality.maxViolations.pmd}</maxAllowedViolations>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <!-- Plugin level for the same reason as PMD: `spotbugs:check` forks `spotbugs:spotbugs`,
+                             which otherwise analysed with includeTests=false. skip comes from the spotbugs.skip
+                             property (see <properties>), which the fork also reads; the Kotlin profile sets it
+                             true, matching the Gradle plugin (SubprojectConfigurer.kt:83 — Java and no Kotlin).
+                             effort/threshold left at engine defaults, like the Gradle plugin. -->
+                        <configuration>
+                            <includeTests>true</includeTests>
+                            <xmlOutput>true</xmlOutput>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>octopus-spotbugs</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <failOnError>${octopus.quality.failOnViolation}</failOnError>
+                                    <maxAllowedViolations>${octopus.quality.maxViolations.spotbugs}</maxAllowedViolations>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>octopus-jacoco-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${octopus.quality.skip}</skip>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>octopus-jacoco-report</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${octopus.quality.skip}</skip>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>octopus-jacoco-check</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${octopus.quality.skip}</skip>
+                                    <haltOnFailure>${octopus.quality.failOnViolation}</haltOnFailure>
+                                    <rules>
+                                        <rule>
+                                            <element>BUNDLE</element>
+                                            <limits>
+                                                <limit>
+                                                    <counter>LINE</counter>
+                                                    <value>COVEREDRATIO</value>
+                                                    <minimum>${octopus.coverage.minimumLine}</minimum>
+                                                </limit>
+                                            </limits>
+                                        </rule>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!--
+          Kotlin gates: detekt + ktlint with the org config, plus SpotBugs off for the reason above.
+          Activates per module, where src/main/kotlin exists — the Maven analogue of the Gradle plugin's
+          language detection. ktlint reads .editorconfig from the repository root and cannot be pointed
+          elsewhere; copy the org one there once.
+        -->
+        <profile>
+            <id>octopus-kotlin-quality</id>
+            <activation>
+                <jdk>[11,)</jdk>
+                <file>
+                    <exists>${basedir}/src/main/kotlin</exists>
+                </file>
+            </activation>
+            <properties>
+                <spotbugs.skip>true</spotbugs.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- ktlint scans Maven's compile source roots. Repos that hand Kotlin dirs to
+                         kotlin-maven-plugin via <sourceDirs> never register them there, so without this
+                         ktlint silently checks nothing. Two executions, not one with both goals: both goals
+                         read the same <sources> parameter, so a shared configuration would put
+                         src/main/kotlin into the TEST roots and never register src/test/kotlin.
+                         javac, Checkstyle and PMD only take *.java from a root, so this is inert for them. -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>octopus-register-kotlin-sources</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- No <skip>: add-source/add-test-source do not declare that parameter, so
+                                         the element was silently ignored. Registering a source root runs no
+                                         analyzer, so it is harmless when quality is skipped. -->
+                                    <sources>
+                                        <source>${basedir}/src/main/kotlin</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>octopus-register-kotlin-test-sources</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>add-test-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>${basedir}/src/test/kotlin</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Deliberately NOT gated on octopus.quality.skip: detekt-maven-plugin 1.23.8
+                                 validates its <config> path before it honours skip, so skipping the fetch makes a
+                                 skipped build fail with "Cannot find the config". Verified both ways. The file is
+                                 small and cached; Checkstyle and PMD honour skip properly, so their fetches above
+                                 are gated. -->
+                            <execution>
+                                <id>octopus-fetch-detekt-config</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <url>${octopus.quality.config.url}/detekt.yml</url>
+                                    <outputDirectory>${octopus.quality.config.dir}</outputDirectory>
+                                    <overwrite>${octopus.quality.config.overwrite}</overwrite>
+                                    <!-- overwrite alone only replaces the file in target/; the plugin would
+                                         still copy the previous revision out of its own ~/.m2 cache. -->
+                                    <skipCache>${octopus.quality.config.overwrite}</skipCache>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.ozsie</groupId>
+                        <artifactId>detekt-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>octopus-detekt</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${octopus.quality.skip}</skip>
+                                    <config>${octopus.quality.config.dir}/detekt.yml</config>
+                                    <buildUponDefaultConfig>true</buildUponDefaultConfig>
+                                    <!-- ${basedir}/src, not a main+test list: detekt-maven-plugin 1.23.8 runs
+                                         only when EVERY listed input directory exists, so a Kotlin module with
+                                         no test tree silently produced no report at all — main sources
+                                         included, at INFO level. One always-present root avoids that; Kotlin
+                                         under src/main/java is still covered, and non-.kt files are ignored. -->
+                                    <input>${basedir}/src</input>
+                                    <failBuildOnMaxIssuesReached>${octopus.quality.failOnViolation}</failBuildOnMaxIssuesReached>
+                                    <maxIssues>${octopus.quality.maxIssues.detekt}</maxIssues>
+                                    <report>
+                                        <report>xml:${project.build.directory}/detekt/detekt.xml</report>
+                                        <report>html:${project.build.directory}/detekt/detekt.html</report>
+                                        <report>sarif:${project.build.directory}/detekt/detekt.sarif</report>
+                                    </report>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.gantsign.maven</groupId>
+                        <artifactId>ktlint-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>octopus-ktlint</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${octopus.quality.skip}</skip>
+                                    <failOnViolation>${octopus.quality.failOnViolation}</failOnViolation>
+                                    <reporters>
+                                        <reporter>
+                                            <name>plain</name>
+                                        </reporter>
+                                        <reporter>
+                                            <name>checkstyle</name>
+                                            <output>${project.build.directory}/ktlint/ktlint.xml</output>
+                                        </reporter>
+                                    </reporters>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!--
+          Mutation testing (PIT). Manual: `mvn -Poctopus-mutation verify`. Not a gate — it re-runs the
+          covering tests once per mutant. JDK 11+ like the others: pitest-maven 1.30.0 is Java 11
+          bytecode and would fail a JDK 8 build with UnsupportedClassVersionError rather than no-op.
+        -->
+        <profile>
+            <id>octopus-mutation</id>
+            <!-- No <activation>: any activation block makes the profile automatic, and a JDK condition
+                 here turned `mvn verify` on JDK 11+ into a mutation run. PIT re-executes the covering
+                 tests once per mutant, so it stays strictly opt-in via -Poctopus-mutation. The JDK 11+
+                 requirement (pitest-maven 1.30.0 is Java 11 bytecode) is documented, not activated. -->
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <!-- pitest-junit5-plugin declares junit-platform-launcher as `provided`, and unlike
+                             surefire PIT does not auto-provision it. A repository whose test classpath has
+                             no launcher adds org.junit.platform:junit-platform-launcher in test scope; a
+                             JUnit 4-only repository adds org.junit.vintage:junit-vintage-engine as well. -->
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.pitest</groupId>
+                                <artifactId>pitest-junit5-plugin</artifactId>
+                                <version>${pitest-junit5-plugin.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>octopus-pitest</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>mutationCoverage</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- No targetClasses: PIT discovers the module's own classes. groupId is
+                                         not a package prefix here (versions-api: org.octopusden.releng;
+                                         license-maven-plugin: org.codehaus.mojo). -->
+                                    <outputFormats>
+                                        <param>XML</param>
+                                        <param>HTML</param>
+                                    </outputFormats>
+                                    <timestampedReports>false</timestampedReports>
+                                    <mutationThreshold>${octopus.mutation.threshold}</mutationThreshold>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!--
+          Regression fixtures for the gate contract itself. `mvn -Pit verify` on a JDK 11+ build runs each
+          fixture under src/it as a real consumer project and asserts the behaviour the README promises.
+          Every one of these encodes a defect that actually shipped in review: the rules were never the
+          problem, the wiring was.
+        -->
+        <profile>
+            <id>it</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-invoker-plugin</artifactId>
+                        <version>${maven-invoker-plugin.version}</version>
+                        <!-- Never inherited: maven-invoker-plugin drives the fixtures, and the fixtures
+                             inherit this POM. Without this they each tried to run the harness on
+                             themselves and died installing a jar that does not exist yet. The same would
+                             happen to any consumer that activated -Pit. -->
+                        <inherited>false</inherited>
+                        <configuration>
+                            <projectsDirectory>${basedir}/src/it</projectsDirectory>
+                            <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                            <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+                            <postBuildHookScript>verify</postBuildHookScript>
+                            <streamLogs>false</streamLogs>
+                            <showErrors>true</showErrors>
+                            <goals>
+                                <goal>verify</goal>
+                            </goals>
+                        </configuration>
+                        <executions>
+                            <!-- prepare-package, for the same reason the gates use it: the shared CI
+                                 workflow runs `mvn package`, while these goals default to
+                                 pre-integration-test / integration-test, which `package` never reaches.
+                                 Measured: `mvn -Pit package` ran zero fixtures before this binding. -->
+                            <execution>
+                                <id>octopus-gate-contract</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>install</goal>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <profile>
             <id>gpg</id>
             <activation>

@@ -12,3 +12,7 @@ jobs:
     uses: octopusden/octopus-base/.github/workflows/common-java-maven-build.yml@v2.1.8
     with:
       java-version: '11'
+      # -Pit runs the gate-contract fixtures in src/it: each asserts a behaviour the README promises,
+      # and each encodes a defect that actually shipped during review. They need a JDK 11+ runtime,
+      # which this job has.
+      mvn-parameters: -Pit
