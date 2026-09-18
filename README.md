@@ -76,6 +76,7 @@ deliberately leaves open — the profiles work on whatever JDK ≥ 11 a reposito
 | Property | Default | Meaning |
 |---|---|---|
 | `octopus.quality.failOnViolation` | `false` | Whether a **finding** fails the build. Same default as the Gradle plugin: reports are produced on every build, and no finding turns a repository red. Flip to `true` per repository, optionally with the ratchet below. It does not absorb configuration or infrastructure errors — see *Network dependency*. |
+| `octopus.coverage.failOnViolation` | inherits `octopus.quality.failOnViolation` | Whether a failed **coverage** check fails the build, separately from the analysers. A repository is often ready to gate coverage while its Kotlin findings are still being worked down, and ktlint has no ratchet to hold them meanwhile. |
 | `octopus.quality.skip` | `false` | Turns every gate off. Works from the consumer POM, from `-D` and from `settings.xml`. |
 | `octopus.quality.maxViolations.checkstyle` / `.pmd` / `.spotbugs` | `0` | Ratchet: how many **existing** violations a repository may carry while strict mode is on. |
 | `octopus.quality.maxIssues.detekt` | `0` | The same, for detekt. |
