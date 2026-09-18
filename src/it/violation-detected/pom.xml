@@ -20,4 +20,60 @@
         <developerConnection>scm:git:ssh://github.com:octopusden/octopus-parent.git</developerConnection>
         <url>https://github.com/octopusden/octopus-parent</url>
     </scm>
+    <build>
+        <plugins>
+            <!-- Reproduces how generated code reaches the analysers: a source root under target/, added by
+                 build-helper exactly as a consumer's annotation processor or groovy-stub output would be. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>write-a-generated-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/generated-sources/fixture"/>
+                                <echo file="${project.build.directory}/generated-sources/fixture/Generated.java"><![CDATA[package fixture;
+
+import java.util.ArrayList;
+
+public class Generated {
+    public void run() {
+        try {
+            System.getProperty("x");
+        } catch (RuntimeException e) {
+        }
+    }
+}
+]]></echo>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>register-generated</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/fixture</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
