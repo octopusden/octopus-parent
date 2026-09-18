@@ -475,11 +475,9 @@
                                 <configuration>
                                     <skip>${octopus.quality.skip}</skip>
                                     <configLocation>${octopus.quality.config.dir}/checkstyle.xml</configLocation>
-                            <!-- Generated code is not code under review. It reaches the analysers because
-                                 build-helper registers target/generated-sources as a source root, which is
-                                 how a groovy-stub or an annotation-processor output ends up reported: six of
-                                 the seven Checkstyle findings in octopus-jira-utils' common module were
-                                 groovy stubs, not its own sources. -->
+                            <!-- Generated code is not code under review, and build-helper registers
+                                 target/generated-sources as a source root: six of the seven Checkstyle
+                                 findings in octopus-jira-utils' common module were groovy stubs. -->
                             <excludeGeneratedSources>true</excludeGeneratedSources>
                                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
                                     <consoleOutput>true</consoleOutput>
