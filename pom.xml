@@ -687,8 +687,11 @@
                                     <!-- Kotlin under src/main/resources or src/test/resources is fixture
                                          data - a file a test feeds to the code under review - not code
                                          this project ships. Without this, detekt reports on it and a
-                                         repository cannot reach zero without editing its own fixtures. -->
-                                    <excludes>**/resources/**</excludes>
+                                         repository cannot reach zero without editing its own fixtures.
+                                         The resource ROOTS, not any directory named resources: a plain
+                                         `**/resources/**` also silences a production package called
+                                         resources, which kotlin-gates now has a control file for. -->
+                                    <excludes>**/src/main/resources/**,**/src/test/resources/**</excludes>
                                     <failBuildOnMaxIssuesReached>${octopus.quality.failOnViolation}</failBuildOnMaxIssuesReached>
                                     <maxIssues>${octopus.quality.maxIssues.detekt}</maxIssues>
                                     <report>
