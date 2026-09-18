@@ -6,7 +6,18 @@ assert ktlint.text.contains('src/test/kotlin') : 'ktlint did not scan src/test/k
 // 2. detekt must run and report.
 assert new File(basedir, 'target/detekt/detekt.xml').exists() : 'detekt report missing'
 
-// 3. SpotBugs must be OFF for a Kotlin module, matching the Gradle convention plugin.
+// 3. Kotlin under src/test/resources is fixture data, not code under review. src/test/resources/fixtures
+// carries a file that would trip EmptyClassBlock and MatchingDeclarationName if it were analysed.
+def detekt = new File(basedir, 'target/detekt/detekt.xml').text
+assert !detekt.contains('src/test/resources') : 'detekt analysed a Kotlin file under src/test/resources'
+
+// ...and the exclusion must be about resource ROOTS, not any directory named `resources`. A plain
+// `**/resources/**` also silences production code in a package called resources; `fixture/control` and
+// `fixture/resources` carry the same violations, so either both are reported or the pattern is wrong.
+assert detekt.contains('fixture/control') : 'the control file was not analysed at all'
+assert detekt.contains('kotlin/fixture/resources') : 'a production package named resources was excluded'
+
+// 4. SpotBugs must be OFF for a Kotlin module, matching the Gradle convention plugin.
 assert !new File(basedir, 'target/spotbugsXml.xml').exists() : 'SpotBugs ran on a Kotlin module'
 
 return true

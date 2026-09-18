@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.octopusden.octopus</groupId>
+        <artifactId>octopus-parent</artifactId>
+        <version>@project.version@</version>
+    </parent>
+    <groupId>org.octopusden.octopus.it</groupId>
+    <artifactId>archunit-available</artifactId>
+    <version>1.0</version>
+    <name>archunit-available</name>
+    <description>octopus-parent quality-gate fixture</description>
+    <url>https://octopusden.org</url>
+    <licenses><license><name>The Apache License, Version 2.0</name><url>http://www.apache.org/licenses/LICENSE-2.0.txt</url></license></licenses>
+    <developers><developer><id>octopus</id><name>octopus</name></developer></developers>
+    <scm>
+        <connection>scm:git:git://github.com/octopusden/octopus-parent.git</connection>
+        <developerConnection>scm:git:ssh://github.com:octopusden/octopus-parent.git</developerConnection>
+        <url>https://github.com/octopusden/octopus-parent</url>
+    </scm>
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- No version: the point of the fixture is that the parent supplies it. -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+        </dependency>
+    </dependencies>
+    <properties>
+        <!-- Only the ArchUnit rules matter here; the coverage floor is a different fixture's subject. -->
+        <octopus.coverage.minimumLine>0.00</octopus.coverage.minimumLine>
+        <!-- A real test covers part of the code; the floor is set below what it achieves, so the gate must
+             PASS on real data rather than by skipping. strict-fails covers the linters; this covers coverage. -->
+        <octopus.coverage.minimumLine>0.30</octopus.coverage.minimumLine>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    </properties>
+</project>

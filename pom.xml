@@ -63,6 +63,7 @@
         <pitest-maven.version>1.30.0</pitest-maven.version>
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
         <equalsverifier.version>3.15.6</equalsverifier.version>
+        <archunit.version>1.5.0</archunit.version>
 
         <!-- Single source of truth for rulesets: the config files bundled in the Gradle convention plugin.
              Pinned to a COMMIT, not a tag: a tag is movable while the download cache keeps the first
@@ -85,6 +86,11 @@
              execution. The Kotlin profile sets spotbugs.skip to true. -->
         <spotbugs.skip>${octopus.quality.skip}</spotbugs.skip>
         <pmd.skip>${octopus.quality.skip}</pmd.skip>
+        <!-- Whether a failed COVERAGE check fails the build. Separate from the analysers on purpose: a
+             repository can be ready to gate coverage while its Kotlin findings are still being worked
+             down, and ktlint has no ratchet to hold them in the meantime. Defaults to the analyser switch,
+             so nothing changes for a repository that does not set it. -->
+        <octopus.coverage.failOnViolation>${octopus.quality.failOnViolation}</octopus.coverage.failOnViolation>
         <!-- Whether a finding fails the build. Same default as the Gradle plugin (java/kotlin.failOnViolation =
              false): a parent bump never reddens a consumer, reports are produced on every build, and each repo
              flips this to true once it is clean. Measured on 2026-09-16 no consumer is clean yet. -->
@@ -106,6 +112,17 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Architecture rules as ordinary JUnit tests: package cycles, layer direction, access that
+                 bypasses an API. None of the six analysers looks past a single file, so this is a category
+                 they cannot report at all. Java 8 bytecode, so it also runs in the repositories where the
+                 quality profiles do not activate. The rules are per repository - architecture differs in a
+                 way a Checkstyle config does not - so there is no org-wide ruleset to ship here. -->
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
+                <scope>test</scope>
+            </dependency>
             <!-- Verifies the equals/hashCode contract over every field combination; the linters above only
                  check that both methods are overridden. Consumers add it without a version. -->
             <dependency>
@@ -554,7 +571,7 @@
                                 </goals>
                                 <configuration>
                                     <skip>${octopus.quality.skip}</skip>
-                                    <haltOnFailure>${octopus.quality.failOnViolation}</haltOnFailure>
+                                    <haltOnFailure>${octopus.coverage.failOnViolation}</haltOnFailure>
                                     <rules>
                                         <rule>
                                             <element>BUNDLE</element>
@@ -679,6 +696,14 @@
                                          included, at INFO level. One always-present root avoids that; Kotlin
                                          under src/main/java is still covered, and non-.kt files are ignored. -->
                                     <input>${basedir}/src</input>
+                                    <!-- Kotlin under src/main/resources or src/test/resources is fixture
+                                         data - a file a test feeds to the code under review - not code
+                                         this project ships. Without this, detekt reports on it and a
+                                         repository cannot reach zero without editing its own fixtures.
+                                         The resource ROOTS, not any directory named resources: a plain
+                                         `**/resources/**` also silences a production package called
+                                         resources, which kotlin-gates now has a control file for. -->
+                                    <excludes>**/src/main/resources/**,**/src/test/resources/**</excludes>
                                     <failBuildOnMaxIssuesReached>${octopus.quality.failOnViolation}</failBuildOnMaxIssuesReached>
                                     <maxIssues>${octopus.quality.maxIssues.detekt}</maxIssues>
                                     <report>

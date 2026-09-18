@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.octopusden.octopus</groupId>
+        <artifactId>octopus-parent</artifactId>
+        <version>@project.version@</version>
+    </parent>
+    <groupId>org.octopusden.octopus.it</groupId>
+    <artifactId>coverage-gate-strict</artifactId>
+    <version>1.0</version>
+    <name>coverage-gate-strict</name>
+    <description>octopus-parent quality-gate fixture</description>
+    <url>https://octopusden.org</url>
+    <licenses><license><name>The Apache License, Version 2.0</name><url>http://www.apache.org/licenses/LICENSE-2.0.txt</url></license></licenses>
+    <developers><developer><id>octopus</id><name>octopus</name></developer></developers>
+    <scm>
+        <connection>scm:git:git://github.com/octopusden/octopus-parent.git</connection>
+        <developerConnection>scm:git:ssh://github.com:octopusden/octopus-parent.git</developerConnection>
+        <url>https://github.com/octopusden/octopus-parent</url>
+    </scm>
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <properties>
+        <!-- Coverage gated on its own, with the analysers left report-only: the floor is above what the
+             single test achieves, so the build must FAIL even though octopus.quality.failOnViolation is
+             false. Without a separate switch the floor was inert. -->
+        <octopus.coverage.minimumLine>0.99</octopus.coverage.minimumLine>
+        <octopus.coverage.failOnViolation>true</octopus.coverage.failOnViolation>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    </properties>
+</project>
