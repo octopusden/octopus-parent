@@ -171,8 +171,38 @@ ktlint has no such parameter and stays all-or-nothing, which is acceptable becau
 Report-only is a starting state, not an end state: each repository needs an owner and a date for reaching
 either a clean build or a frozen baseline.
 
-Also in `dependencyManagement`: `nl.jqno.equalsverifier:equalsverifier-nodep` (test scope), for
-equals/hashCode contract tests — the linters above only check that both methods are overridden.
+## Test libraries in `dependencyManagement`
+
+Two libraries cover defect classes no analyser here reports. Both are test scope, both are declared by a
+consumer **without a version**, and neither needs a gate, a phase or a CI change — they are ordinary tests.
+
+| Library | Catches |
+|---|---|
+| `nl.jqno.equalsverifier:equalsverifier-nodep` | the `equals`/`hashCode` contract over every field combination. The linters only check that both methods are overridden, not that they agree — which is exactly the defect that started this work. |
+| `com.tngtech.archunit:archunit-junit5` | architecture: package cycles, layer direction, access that bypasses an API. Every analyser here looks at one file at a time, so this is a category they cannot report at all. |
+
+```xml
+<dependency>
+    <groupId>com.tngtech.archunit</groupId>
+    <artifactId>archunit-junit5</artifactId>
+</dependency>
+```
+
+ArchUnit is Java 8 bytecode, so it runs in the repositories where the quality profiles do not activate at
+all. A starting pair of rules, small enough to be obviously correct:
+
+```java
+noClasses().that().resideInAPackage("..api..")
+        .should().dependOnClassesThat().resideInAPackage("..internal..")
+        .check(classes);
+
+slices().matching("com.example.(*)..").should().beFreeOfCycles().check(classes);
+```
+
+**The rules belong to the repository, not here.** Architecture differs per repository in a way a
+Checkstyle config does not, so this POM ships a version and nothing else — there is no org-wide ArchUnit
+ruleset to inherit, and inventing one would repeat, worse, the coupling #6 is unwinding for the analyser
+rulesets.
 
 ## The gate contract is tested
 
@@ -189,6 +219,7 @@ were never the problem, the wiring was. The CI build runs them on every push and
 | `pit-opt-in` | PIT does not execute without `-Poctopus-mutation` |
 | `spotbugs-detected` | SpotBugs actually analyses a Java module and reports a finding, rather than going inert unnoticed |
 | `coverage-gate` | a real test produces `jacoco.exec`, a report mentioning the class, and a coverage check evaluated against real data |
+| `archunit-available` | a consumer declares `archunit-junit5` with no version, it resolves from this POM, and two real ArchUnit rules execute |
 | `kotlin-no-tests` | a Kotlin module with no test tree still gets a detekt report |
 | `ratchet-allows-baseline` | strict mode with a frozen backlog passes while still reporting, so a repository can enable strict before the backlog is gone |
 | `kotlin-gates` | ktlint scans `src/test/kotlin` with Kotlin declared only via `<sourceDirs>`; detekt reports; SpotBugs is off for a Kotlin module |
