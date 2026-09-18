@@ -29,8 +29,6 @@
         </dependency>
     </dependencies>
     <properties>
-        <!-- A real test covers part of the code; the floor is set below what it achieves, so the gate must
-             PASS on real data rather than by skipping. strict-fails covers the linters; this covers coverage. -->
         <!-- Coverage gated on its own, with the analysers left report-only: the floor is above what the
              single test achieves, so the build must FAIL even though octopus.quality.failOnViolation is
              false. Without a separate switch the floor was inert. -->
