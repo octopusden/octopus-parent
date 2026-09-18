@@ -1,0 +1,68 @@
+name: Publish Pending Deployment
+
+# A release that ends in "validated" has uploaded everything and published nothing: the artifact is not
+# resolvable, while the release run reports success. This finishes such a deployment without a trip to the
+# portal, and is the lever to reach for while #11 is open.
+#
+# It is deliberately manual and takes the deployment id from the release log, so it can never publish
+# something nobody looked at.
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment-id:
+        description: 'Deployment id from the release log ("deploymentId: ...")'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: Prod
+    steps:
+      - name: Publish the deployment
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+          DEPLOYMENT_ID: ${{ inputs.deployment-id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${OSSRH_USERNAME:-}" ] || [ -z "${OSSRH_TOKEN:-}" ]; then
+            echo "::error::OSSRH_USERNAME / OSSRH_TOKEN are not available to this job"
+            exit 1
+          fi
+
+          auth="$(printf '%s:%s' "${OSSRH_USERNAME}" "${OSSRH_TOKEN}" | base64 | tr -d '\n')"
+          api="https://central.sonatype.com/api/v1/publisher"
+
+          # State first: publishing an already-published deployment, or one that failed validation, should
+          # say so rather than produce an opaque error.
+          status="$(curl -sS -X POST -H "Authorization: Bearer ${auth}" \
+            "${api}/status?id=${DEPLOYMENT_ID}" || true)"
+          echo "Current state: ${status}"
+
+          case "${status}" in
+            *PUBLISHED*) echo "::notice::${DEPLOYMENT_ID} is already published; nothing to do"; exit 0 ;;
+            *FAILED*)    echo "::error::${DEPLOYMENT_ID} failed validation; it cannot be published"; exit 1 ;;
+          esac
+
+          code="$(curl -sS -o /tmp/publish.out -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer ${auth}" "${api}/deployment/${DEPLOYMENT_ID}")"
+          cat /tmp/publish.out || true
+
+          if [ "${code}" != "204" ] && [ "${code}" != "200" ]; then
+            echo "::error::Publishing ${DEPLOYMENT_ID} returned HTTP ${code}"
+            exit 1
+          fi
+
+          echo "::notice title=Published::${DEPLOYMENT_ID} was handed to Central; it becomes resolvable once it syncs"
+          {
+            echo "### Published"
+            echo ""
+            echo "Deployment \`${DEPLOYMENT_ID}\` was published. Maven Central sync is not instant."
+          } >> "${GITHUB_STEP_SUMMARY}"

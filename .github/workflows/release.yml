@@ -28,4 +28,10 @@ jobs:
       flow-type: public
       increment-version-level: ${{ inputs.increment-version-level }}
       dry-run: ${{ inputs.dry-run }}
+      # -DautoPublish=true, although pom.xml already sets it and the effective POM shows it applied:
+      # both 2.1.0 and 2.2.0 still stopped at "validated" and waited for a click in the portal. The
+      # descriptor for central-publishing-maven-plugin 0.8.0 exposes the user property `autoPublish`,
+      # and a -D value wins over configuration, so this forces the automatic publishing type whatever
+      # is swallowing the POM setting. See #11.
+      release-mvn-parameters: -DautoPublish=true
     secrets: inherit
