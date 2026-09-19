@@ -45,6 +45,21 @@
                             </resources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>plant-a-generated-test-source</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-test-sources/fixture</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/generated-test-fixture</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -60,6 +75,18 @@
                         <configuration>
                             <sources>
                                 <source>${project.build.directory}/generated-sources/fixture</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>register-generated-test</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-test-sources/fixture</source>
                             </sources>
                         </configuration>
                     </execution>
