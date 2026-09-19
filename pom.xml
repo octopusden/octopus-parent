@@ -475,6 +475,10 @@
                                 <configuration>
                                     <skip>${octopus.quality.skip}</skip>
                                     <configLocation>${octopus.quality.config.dir}/checkstyle.xml</configLocation>
+                            <!-- Generated code is not code under review, and build-helper registers
+                                 target/generated-sources as a source root: six of the seven Checkstyle
+                                 findings in octopus-jira-utils' common module were groovy stubs. -->
+                            <excludeGeneratedSources>true</excludeGeneratedSources>
                                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
                                     <consoleOutput>true</consoleOutput>
                                     <violationSeverity>warning</violationSeverity>
@@ -498,6 +502,12 @@
                             </rulesets>
                             <includeTests>true</includeTests>
                             <printFailingErrors>true</printFailingErrors>
+                            <!-- Same reason as excludeGeneratedSources on Checkstyle; PMD spells it as a
+                                 root rather than a flag. -->
+                            <excludeRoots>
+                                <excludeRoot>${project.build.directory}/generated-sources</excludeRoot>
+                                <excludeRoot>${project.build.directory}/generated-test-sources</excludeRoot>
+                            </excludeRoots>
                             <targetJdk>${maven.compiler.target}</targetJdk>
                         </configuration>
                         <executions>

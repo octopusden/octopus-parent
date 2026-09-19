@@ -14,4 +14,14 @@ assert pmd.text.contains('SampleTest') : 'pmd did not analyse test sources — t
 
 // Checkstyle does not fork, but the same promise applies to it.
 assert cs.text.contains('SampleTest') : 'checkstyle did not analyse test sources'
+// Generated code is not code under review. This project writes a Generated.java under
+// target/generated-sources and registers it as a source root, carrying the same unused import and empty
+// catch as the hand-written sources - so if it were analysed, both reports would name it.
+assert !cs.text.contains('Generated.java') : 'checkstyle reported on a generated source'
+assert !pmd.text.contains('Generated.java') : 'pmd reported on a generated source'
+
+// And the same for a generated TEST root. PMD names target/generated-test-sources as a second
+// excludeRoot; without this the root could be deleted and every assertion above would still pass.
+assert !cs.text.contains('GeneratedHelper.java') : 'checkstyle reported on a generated test source'
+assert !pmd.text.contains('GeneratedHelper.java') : 'pmd reported on a generated test source'
 return true
