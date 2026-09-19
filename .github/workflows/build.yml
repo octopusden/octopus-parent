@@ -9,7 +9,7 @@ on:
 
 jobs:
   run-build-and-deploy:
-    uses: octopusden/octopus-base/.github/workflows/common-java-maven-build.yml@v3.0.2
+    uses: octopusden/octopus-base/.github/workflows/common-java-maven-build.yml@v3.0.3
     with:
       java-version: '11'
       # -Pit runs the gate-contract fixtures in src/it: each asserts a behaviour the README promises,
