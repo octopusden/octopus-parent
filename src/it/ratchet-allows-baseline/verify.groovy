@@ -6,4 +6,10 @@ def pmd = new File(basedir, 'target/pmd.xml')
 assert cs.exists() && pmd.exists() : 'reports missing — the gates did not run'
 assert cs.text.contains('UnusedImports') : 'checkstyle found nothing, so the ratchet proves nothing'
 assert pmd.text.contains('EmptyCatchBlock') : 'pmd found nothing, so the ratchet proves nothing'
+
+// SpotBugs too. Without a finding the check goal never reaches the comparison, and a ratchet that
+// cannot be satisfied looks identical to one that is.
+def sb = new File(basedir, 'target/spotbugsXml.xml')
+assert sb.exists() : 'spotbugs produced no report — the gate did not run'
+assert sb.text.contains('EI_EXPOSE_REP') : 'spotbugs found nothing, so the ratchet proves nothing'
 return true

@@ -52,7 +52,11 @@
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
         <checkstyle.version>10.17.0</checkstyle.version>
         <maven-pmd-plugin.version>3.21.2</maven-pmd-plugin.version>
-        <spotbugs-maven-plugin.version>4.9.8.0</spotbugs-maven-plugin.version>
+        <!-- 4.9.8.0's check goal throws "No such property: EOF for class: SpotBugsInfo" on the branch
+             that reports a ratchet being SATISFIED, so any non-zero maxViolations.spotbugs crashed the
+             build precisely when it should have passed. Pinned forward to the fix; the
+             ratchet-allows-baseline fixture now carries a SpotBugs finding so this cannot regress. -->
+        <spotbugs-maven-plugin.version>4.9.8.5</spotbugs-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
         <detekt-maven-plugin.version>1.23.8</detekt-maven-plugin.version>
         <ktlint-maven-plugin.version>3.7.1</ktlint-maven-plugin.version>
