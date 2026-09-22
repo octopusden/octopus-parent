@@ -28,4 +28,11 @@ jobs:
       flow-type: public
       increment-version-level: ${{ inputs.increment-version-level }}
       dry-run: ${{ inputs.dry-run }}
+      # Register from inside the release, not from a workflow_run listener. The registering job
+      # takes the version from prepare-build-publish-release's output, runs only when
+      # !inputs.dry-run, and needs tag-and-release to have succeeded - so there is no version to
+      # resolve and no fallback to resolve it wrongly. Artifact availability is already established
+      # upstream: tag-and-release runs after finish-publication, which waits for PUBLISHED and
+      # verifies the artifacts resolve on Central.
+      register-release-immediately: true
     secrets: inherit
