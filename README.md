@@ -142,8 +142,10 @@ executions to a later phase.
 ### Rolling a repository onto the gates
 
 1. Bump the parent. On JDK 8 CI nothing changes. On JDK 11+ the gates now **fail** the build on a
-   finding — so measure before you bump: `mvn -DskipTests verify` on JDK 11 tells you what you are in
-   for. A repository that cannot clear its backlog in the same change freezes it with the ratchets
+   finding — so measure before you bump: `mvn clean verify` on JDK 11 tells you what you are in for.
+   Run the tests: with `-DskipTests` there is no execution data, so JaCoCo *skips* rather than
+   evaluating the floor, and the coverage gate this bump also switches on stays invisible until CI
+   hits it. A repository that cannot clear its backlog in the same change freezes it with the ratchets
    below, or opts out explicitly with `<octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>`.
 2. Fix the findings. Kotlin first: `mvn initialize ktlint:format` — nearly all Kotlin findings are
    formatting. The `initialize` phase is required, not decorative: it is where the Kotlin source roots
@@ -215,7 +217,7 @@ were never the problem, the wiring was. The CI build runs them on every push and
 
 | Fixture | Asserts |
 |---|---|
-| `violation-detected` | report-only finds and reports violations without failing; the org ruleset and `includeTests=true` reach the **forked** analysis goals |
+| `violation-detected` | a repository that opts out of failing still finds and reports violations; the org ruleset and `includeTests=true` reach the **forked** analysis goals |
 | `strict-fails` | a finding fails the build **by default** — the fixture sets no `failOnViolation`, so it is what pins the default |
 | `skip-disables` | `octopus.quality.skip` set in the consumer POM disables everything and writes no report |
 | `consumer-gate-preserved` | a consumer's own PMD gate keeps its own failing semantics; the parent does not downgrade it |

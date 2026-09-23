@@ -1,4 +1,5 @@
-// Report-only is the default: violations must be FOUND and REPORTED without failing the build.
+// Report-only, opted into by this fixture's POM: violations must be FOUND and REPORTED without failing
+// the build. The parent's default is to fail, which is what strict-fails pins.
 def cs = new File(basedir, 'target/checkstyle-result.xml')
 def pmd = new File(basedir, 'target/pmd.xml')
 assert cs.exists() : 'checkstyle report missing — the gate did not run under `mvn verify`'
