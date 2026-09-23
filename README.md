@@ -224,6 +224,7 @@ were never the problem, the wiring was. The CI build runs them on every push and
 | `pit-opt-in` | PIT does not execute without `-Poctopus-mutation` |
 | `spotbugs-detected` | SpotBugs actually analyses a Java module and reports a finding, rather than going inert unnoticed |
 | `coverage-gate` | a real test produces `jacoco.exec`, a report mentioning the class, and a coverage check evaluated against real data |
+| `coverage-fails-by-default` | a consumer that sets **nothing** inherits the coverage gate and fails at the `0.10` floor — the only fixture pinning what doing nothing gets you |
 | `archunit-available` | a consumer declares `archunit-junit5` with no version, it resolves from this POM, and two real ArchUnit rules execute |
 | `kotlin-no-tests` | a Kotlin module with no test tree still gets a detekt report |
 | `ratchet-allows-baseline` | strict mode with a frozen backlog passes while still reporting, so a repository can enable strict before the backlog is gone |
