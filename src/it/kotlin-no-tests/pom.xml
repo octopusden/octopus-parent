@@ -22,6 +22,8 @@
     </scm>
     <properties>
         <kotlin.version>1.9.25</kotlin.version>
+        <!-- Advisory: the subject is activation with no test sources, not the one detekt issue. -->
+        <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
     </properties>
     <dependencies>
         <dependency>

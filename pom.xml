@@ -95,10 +95,10 @@
              down, and ktlint has no ratchet to hold them in the meantime. Defaults to the analyser switch,
              so nothing changes for a repository that does not set it. -->
         <octopus.coverage.failOnViolation>${octopus.quality.failOnViolation}</octopus.coverage.failOnViolation>
-        <!-- Whether a finding fails the build. Same default as the Gradle plugin (java/kotlin.failOnViolation =
-             false): a parent bump never reddens a consumer, reports are produced on every build, and each repo
-             flips this to true once it is clean. Measured on 2026-09-16 no consumer is clean yet. -->
-        <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
+        <!-- Whether a finding fails the build. A gate that reports and passes prints [ERROR] per finding
+             and goes green, which reads as protection while providing none. Not clean yet: hold the
+             backlog with the ratchets below, or set this to false in the consumer pom where it is seen. -->
+        <octopus.quality.failOnViolation>true</octopus.quality.failOnViolation>
         <!-- Ratchet: the number of EXISTING violations a repository is allowed to carry while strict mode
              is on, so a repo can enable failOnViolation before the backlog is gone and still block NEW debt.
              Set each to the current count, then lower it as findings are fixed; never raise it. Only

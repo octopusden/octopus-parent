@@ -22,6 +22,8 @@
     </scm>
     <properties>
         <kotlin.version>1.9.25</kotlin.version>
+        <!-- Advisory: the four deliberate detekt findings are read from the log. -->
+        <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
     </properties>
     <dependencies>
         <dependency>

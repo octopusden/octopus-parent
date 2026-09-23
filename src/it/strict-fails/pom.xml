@@ -21,9 +21,8 @@
         <url>https://github.com/octopusden/octopus-parent</url>
     </scm>
     <properties>
-        <octopus.quality.failOnViolation>true</octopus.quality.failOnViolation>
-        <!-- Coverage is a separate gate; without this the fixture would fail on an empty jacoco.exec and
-             pass for the wrong reason. -->
-        <octopus.coverage.minimumLine>0.00</octopus.coverage.minimumLine>
+        <!-- Do NOT set octopus.quality.failOnViolation here: this fixture pins the parent's default. -->
+        <!-- The build must fail on the Checkstyle finding, not on an empty jacoco.exec. -->
+        <octopus.coverage.failOnViolation>false</octopus.coverage.failOnViolation>
     </properties>
 </project>

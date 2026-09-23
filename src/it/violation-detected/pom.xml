@@ -20,6 +20,10 @@
         <developerConnection>scm:git:ssh://github.com:octopusden/octopus-parent.git</developerConnection>
         <url>https://github.com/octopusden/octopus-parent</url>
     </scm>
+    <properties>
+        <!-- Advisory: the subject is what the reports CONTAIN, so the build must reach the end. -->
+        <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
+    </properties>
     <build>
         <plugins>
             <!-- Reproduces how generated code reaches the analysers: copied UNDER target/generated-sources,

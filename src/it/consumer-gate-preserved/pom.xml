@@ -20,6 +20,10 @@
         <developerConnection>scm:git:ssh://github.com:octopusden/octopus-parent.git</developerConnection>
         <url>https://github.com/octopusden/octopus-parent</url>
     </scm>
+    <properties>
+        <!-- Advisory: strict ends the build before consumer-pmd runs, which is the subject. -->
+        <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
+    </properties>
     <build>
         <plugins>
             <!-- The consumer's own PMD gate leaves failOnViolation at the plugin default (true).

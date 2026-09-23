@@ -29,9 +29,11 @@
         </dependency>
     </dependencies>
     <properties>
-        <!-- Coverage gated on its own, with the analysers left report-only: the floor is above what the
-             single test achieves, so the build must FAIL even though octopus.quality.failOnViolation is
-             false. Without a separate switch the floor was inert. -->
+        <!-- Coverage gated on its own, with the analysers advisory: the floor is above what the single
+             test achieves, so the build must FAIL on coverage while a finding would not fail it. The
+             analyser switch is set false HERE on purpose - the parent's default is true, and inheriting
+             it would make both switches true and this fixture prove nothing about their independence. -->
+        <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
         <octopus.coverage.minimumLine>0.99</octopus.coverage.minimumLine>
         <octopus.coverage.failOnViolation>true</octopus.coverage.failOnViolation>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
