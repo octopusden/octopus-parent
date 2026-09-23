@@ -22,9 +22,7 @@
     </scm>
     <properties>
         <kotlin.version>1.9.25</kotlin.version>
-        <!-- The subject is that ktlint and detekt ACTIVATE on a Kotlin module and that SpotBugs is off
-             there - which is read from the detekt findings in the log, so the build has to reach the end.
-             The parent gates by default and the fixture carries four deliberate detekt issues. -->
+        <!-- Advisory: the four deliberate detekt findings are read from the log. -->
         <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
     </properties>
     <dependencies>

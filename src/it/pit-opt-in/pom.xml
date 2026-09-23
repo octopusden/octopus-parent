@@ -21,8 +21,7 @@
         <url>https://github.com/octopusden/octopus-parent</url>
     </scm>
     <properties>
-        <!-- Advisory on purpose: the subject is that PIT does NOT run without -Poctopus-mutation. The
-             fixture's own Checkstyle finding is incidental to that and must not end the build first. -->
+        <!-- Advisory: the fixture's Checkstyle finding is incidental to PIT opt-in. -->
         <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
     </properties>
 </project>

@@ -21,10 +21,7 @@
         <url>https://github.com/octopusden/octopus-parent</url>
     </scm>
     <properties>
-        <!-- Advisory on purpose. The subject here is WHAT the analysers report - which findings land in
-             the reports and which generated sources stay out of them - not whether a finding stops the
-             build. With the parent's default the build would end at the first gate, before the reports
-             this fixture reads exist to be compared. -->
+        <!-- Advisory: the subject is what the reports CONTAIN, so the build must reach the end. -->
         <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
     </properties>
     <build>
