@@ -28,4 +28,7 @@ jobs:
       flow-type: public
       increment-version-level: ${{ inputs.increment-version-level }}
       dry-run: ${{ inputs.dry-run }}
+      # Registration lives in the release job: exact version from the build output, gated on
+      # !dry-run. Replaces a workflow_run listener that had to guess the version.
+      register-release-immediately: true
     secrets: inherit
