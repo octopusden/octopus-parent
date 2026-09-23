@@ -22,6 +22,13 @@
     </scm>
     <properties>
         <kotlin.version>1.9.25</kotlin.version>
+        <!-- The subject is that ktlint and detekt ACTIVATE on a Kotlin module and that SpotBugs is off
+             there - which is read from the detekt findings in the log, so the build has to reach the end.
+             The parent gates by default and the fixture carries four deliberate detekt issues. -->
+        <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
+        <!-- The fixture's test runs no production code, so the inherited floor would fail it for a reason
+             this fixture does not test. -->
+        <octopus.coverage.minimumLine>0.00</octopus.coverage.minimumLine>
     </properties>
     <dependencies>
         <dependency>

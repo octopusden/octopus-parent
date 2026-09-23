@@ -20,6 +20,12 @@
         <developerConnection>scm:git:ssh://github.com:octopusden/octopus-parent.git</developerConnection>
         <url>https://github.com/octopusden/octopus-parent</url>
     </scm>
+    <properties>
+        <!-- The parent's own gates must stay advisory here, or they end the build before consumer-pmd
+             runs and the fixture can no longer prove what it exists to prove: that a consumer's OWN
+             stricter execution survives the parent. -->
+        <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
+    </properties>
     <build>
         <plugins>
             <!-- The consumer's own PMD gate leaves failOnViolation at the plugin default (true).

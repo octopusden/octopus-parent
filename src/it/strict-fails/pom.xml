@@ -21,7 +21,8 @@
         <url>https://github.com/octopusden/octopus-parent</url>
     </scm>
     <properties>
-        <octopus.quality.failOnViolation>true</octopus.quality.failOnViolation>
+        <!-- octopus.quality.failOnViolation is deliberately NOT set: the parent gates by default, and this
+             fixture is what proves it. Setting it here would assert only that an explicit true works. -->
         <!-- Coverage is a separate gate; without this the fixture would fail on an empty jacoco.exec and
              pass for the wrong reason. -->
         <octopus.coverage.minimumLine>0.00</octopus.coverage.minimumLine>

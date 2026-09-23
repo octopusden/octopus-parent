@@ -48,8 +48,9 @@ rate-limited GitHub fails the build — `download-maven-plugin` defaults `failOn
 it does not help: a missing `configLocation`/`<ruleset>` is a *configuration* error, which
 `failOnViolation=false` does not absorb.
 
-So the accurate promise is narrower than "a parent bump never reddens a repository": **no finding will turn a
-repository red**, but the ruleset fetch is a new infrastructure dependency. A repository that cannot accept
+A parent bump can now redden a repository in two distinct ways, and they are worth telling apart: a
+**finding** does it by design (see the table below — that is what the gate is), while an unreachable
+ruleset does it as *infrastructure*, which no `failOnViolation` setting absorbs. A repository that cannot accept
 that sets `octopus.quality.skip` until the rulesets ship as a resolved artifact — tracked in #6. One exception to the skip: the detekt config fetch is not gated on it, because
 `detekt-maven-plugin` validates its config path before honouring skip.
 
@@ -75,7 +76,7 @@ deliberately leaves open — the profiles work on whatever JDK ≥ 11 a reposito
 
 | Property | Default | Meaning |
 |---|---|---|
-| `octopus.quality.failOnViolation` | `false` | Whether a **finding** fails the build. Same default as the Gradle plugin: reports are produced on every build, and no finding turns a repository red. Flip to `true` per repository, optionally with the ratchet below. It does not absorb configuration or infrastructure errors — see *Network dependency*. |
+| `octopus.quality.failOnViolation` | `true` | Whether a **finding** fails the build. A gate that reports and passes prints `[ERROR]` per finding and goes green, which reads as protection while providing none. A repository not yet clean holds its backlog with the ratchet below, or sets this to `false` — an explicit, visible opt-out rather than a silent default. It does not absorb configuration or infrastructure errors — see *Network dependency*. |
 | `octopus.coverage.failOnViolation` | inherits `octopus.quality.failOnViolation` | Whether a failed **coverage** check fails the build, separately from the analysers. A repository is often ready to gate coverage while its Kotlin findings are still being worked down, and ktlint has no ratchet to hold them meanwhile. |
 | `octopus.quality.skip` | `false` | Turns every gate off. Works from the consumer POM, from `-D` and from `settings.xml`. |
 | `octopus.quality.maxViolations.checkstyle` / `.pmd` / `.spotbugs` | `0` | Ratchet: how many **existing** violations a repository may carry while strict mode is on. |
@@ -140,21 +141,23 @@ executions to a later phase.
 
 ### Rolling a repository onto the gates
 
-1. Bump the parent. On JDK 8 CI nothing changes; on JDK 11+ the build now prints findings and writes
-   reports, and still passes.
+1. Bump the parent. On JDK 8 CI nothing changes. On JDK 11+ the gates now **fail** the build on a
+   finding — so measure before you bump: `mvn -DskipTests verify` on JDK 11 tells you what you are in
+   for. A repository that cannot clear its backlog in the same change freezes it with the ratchets
+   below, or opts out explicitly with `<octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>`.
 2. Fix the findings. Kotlin first: `mvn initialize ktlint:format` — nearly all Kotlin findings are
    formatting. The `initialize` phase is required, not decorative: it is where the Kotlin source roots
    are registered, and `mvn ktlint:format` alone reports `0 file(s) formatted` on a repository that
    declares Kotlin through `kotlin-maven-plugin` `<sourceDirs>`. Measured on octopus-releng-lib: 166
    ktlint findings before, 6 after — the remainder are wildcard imports and property naming, which
    ktlint cannot rewrite.
-3. Set `<octopus.quality.failOnViolation>true</octopus.quality.failOnViolation>` in the repository POM.
+3. Nothing to set — strict is the default. Remove any `failOnViolation` override the repository was
+   carrying once it reaches zero.
 
-Step 2 does not have to come first. A repository that cannot clear the backlog now can turn strict mode on
-immediately and **freeze** what it has, so that no *new* debt gets in:
+Step 2 does not have to come first. A repository that cannot clear the backlog now **freezes** what it has,
+so that no *new* debt gets in:
 
 ```xml
-<octopus.quality.failOnViolation>true</octopus.quality.failOnViolation>
 <octopus.quality.maxViolations.checkstyle>17</octopus.quality.maxViolations.checkstyle>
 <octopus.quality.maxViolations.pmd>13</octopus.quality.maxViolations.pmd>
 <octopus.quality.maxViolations.spotbugs>57</octopus.quality.maxViolations.spotbugs>
@@ -213,7 +216,7 @@ were never the problem, the wiring was. The CI build runs them on every push and
 | Fixture | Asserts |
 |---|---|
 | `violation-detected` | report-only finds and reports violations without failing; the org ruleset and `includeTests=true` reach the **forked** analysis goals |
-| `strict-fails` | `failOnViolation=true` fails the build |
+| `strict-fails` | a finding fails the build **by default** — the fixture sets no `failOnViolation`, so it is what pins the default |
 | `skip-disables` | `octopus.quality.skip` set in the consumer POM disables everything and writes no report |
 | `consumer-gate-preserved` | a consumer's own PMD gate keeps its own failing semantics; the parent does not downgrade it |
 | `pit-opt-in` | PIT does not execute without `-Poctopus-mutation` |

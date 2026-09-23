@@ -20,4 +20,9 @@
         <developerConnection>scm:git:ssh://github.com:octopusden/octopus-parent.git</developerConnection>
         <url>https://github.com/octopusden/octopus-parent</url>
     </scm>
+    <properties>
+        <!-- Advisory on purpose: the subject is that spotbugsXml.xml CONTAINS the two bugs, which requires
+             the build to reach the point where the report can be read. The parent gates by default. -->
+        <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
+    </properties>
 </project>

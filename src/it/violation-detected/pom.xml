@@ -20,6 +20,13 @@
         <developerConnection>scm:git:ssh://github.com:octopusden/octopus-parent.git</developerConnection>
         <url>https://github.com/octopusden/octopus-parent</url>
     </scm>
+    <properties>
+        <!-- Advisory on purpose. The subject here is WHAT the analysers report - which findings land in
+             the reports and which generated sources stay out of them - not whether a finding stops the
+             build. With the parent's default the build would end at the first gate, before the reports
+             this fixture reads exist to be compared. -->
+        <octopus.quality.failOnViolation>false</octopus.quality.failOnViolation>
+    </properties>
     <build>
         <plugins>
             <!-- Reproduces how generated code reaches the analysers: copied UNDER target/generated-sources,
