@@ -27,8 +27,9 @@
         <octopus.quality.maxViolations.checkstyle>100</octopus.quality.maxViolations.checkstyle>
         <octopus.quality.maxViolations.pmd>100</octopus.quality.maxViolations.pmd>
         <octopus.quality.maxViolations.spotbugs>100</octopus.quality.maxViolations.spotbugs>
-        <!-- The fixture carries no tests; the coverage floor is a separate gate and would fail the build
-             for an unrelated reason, hiding what this fixture is about. -->
-        <octopus.coverage.minimumLine>0.00</octopus.coverage.minimumLine>
+        <!-- The fixture carries no tests; coverage is a separate gate and would fail the build for an
+             unrelated reason, hiding what this fixture is about. Said as "not gated" rather than as a
+             0.00 floor, which would be a threshold that cannot fail. -->
+        <octopus.coverage.failOnViolation>false</octopus.coverage.failOnViolation>
     </properties>
 </project>

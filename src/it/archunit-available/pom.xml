@@ -34,10 +34,11 @@
         </dependency>
     </dependencies>
     <properties>
-        <!-- Only the ArchUnit rules matter here; the coverage floor is a different fixture's subject. The
-             ArchUnit test asserts on bytecode and executes none of the production code, so the measured
-             ratio is 0.00 - a floor above that would fail this fixture for the wrong reason. -->
-        <octopus.coverage.minimumLine>0.00</octopus.coverage.minimumLine>
+        <!-- Only the ArchUnit rules matter here; coverage is coverage-gate's subject. Said as "not gated"
+             rather than as a 0.00 floor: a threshold nothing can fail still reads as a threshold, and the
+             ArchUnit test asserts on bytecode and executes no production code, so the ratio is 0.00. The
+             analysers stay strict - this fixture has no findings and should fail if it grows one. -->
+        <octopus.coverage.failOnViolation>false</octopus.coverage.failOnViolation>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     </properties>
 </project>
