@@ -154,6 +154,10 @@
                     <configuration>
                         <publishingServerId>ossrh</publishingServerId>
                         <autoPublish>true</autoPublish>
+                        <!-- Central requires only MD5 and SHA-1 next to each file and its .asc; the plugin
+                             default (all) also bundles SHA-256 and SHA-512, 2 of 6 uploaded files per artifact
+                             file, and Central's monthly file quota counts them. -->
+                        <checksums>required</checksums>
                     </configuration>
                 </plugin>
                 <plugin>
