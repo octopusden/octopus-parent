@@ -246,10 +246,11 @@ Maven/Plexus splits — but stays available as `mvn enforcer:enforce`.
 
 ## Plugin versions
 
-Every plugin Maven's default lifecycle binds (clean, resources, compiler, surefire, jar, war, plugin,
-install, site; deploy is pinned separately) and the four that Maven 3.9's super POM versioned (antrun,
-assembly, dependency, release) are pinned here, to the versions Maven 3.10.0 binds or resolves. Without
-a pin, these versions come from whichever Maven runs the build, so a runner image with a newer Maven
+The plugins Maven's default lifecycle binds for pom, jar, war and maven-plugin packaging plus the clean
+and site lifecycles (clean, resources, compiler, surefire, jar, war, plugin, install, site; deploy is
+pinned separately) are pinned here to the versions Maven 3.10.0 binds. ear, ejb and rar packaging are
+not covered. The four that Maven 3.9's super POM versioned (antrun, assembly, dependency, release) are
+pinned to a fixed release. Without a pin, these versions come from whichever Maven runs the build, so a runner image with a newer Maven
 changes them in every repository at once. Each pinned version declares `requiredMavenVersion` 3.6.3 and
 `requiredJavaVersion` 1.8, so the floor above still holds.
 

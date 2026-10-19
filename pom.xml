@@ -58,7 +58,7 @@
         <maven-install-plugin.version>3.2.0</maven-install-plugin.version>
         <maven-site-plugin.version>3.22.0</maven-site-plugin.version>
         <!-- Maven 3.9's super POM gives these four a version; Maven 3.10.0's does not, so unpinned they
-             resolve to the newest release on every build. Pinned to the release 3.10.0 resolves. -->
+             resolve to the newest release on every build. Pinned to a fixed release; bump deliberately. -->
         <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
         <maven-assembly-plugin.version>3.8.0</maven-assembly-plugin.version>
         <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
