@@ -1,0 +1,17 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "ignorePaths": ["src/it/**"],
+  "packageRules": [
+    {
+      "description": "Lifecycle and packaging plugins move together; the analysis plugins change gate findings, so each keeps its own PR",
+      "matchPackageNames": [
+        "org.apache.maven.plugins:**",
+        "!org.apache.maven.plugins:maven-checkstyle-plugin",
+        "!org.apache.maven.plugins:maven-pmd-plugin"
+      ],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Apache Maven plugins"
+    }
+  ]
+}
