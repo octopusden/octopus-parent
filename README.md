@@ -229,7 +229,6 @@ were never the problem, the wiring was. The CI build runs them on every push and
 | `kotlin-no-tests` | a Kotlin module with no test tree still gets a detekt report |
 | `ratchet-allows-baseline` | strict mode with a frozen backlog passes while still reporting, so a repository can enable strict before the backlog is gone |
 | `kotlin-gates` | ktlint scans `src/test/kotlin` with Kotlin declared only via `<sourceDirs>`; detekt reports; SpotBugs is off for a Kotlin module |
-| `plugin-versions-pinned` | a jar consumer that declares no plugins passes `requirePluginVersions` in strict mode: every plugin it runs has a version from this POM |
 | `plugin-versions-warn-by-default` | a consumer's own unversioned plugin is reported, not fatal, and no plugin this POM manages is reported |
 
 Each fixture was verified to fail when its defect is reintroduced, not merely to pass today.
