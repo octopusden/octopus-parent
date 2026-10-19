@@ -229,6 +229,8 @@ were never the problem, the wiring was. The CI build runs them on every push and
 | `kotlin-no-tests` | a Kotlin module with no test tree still gets a detekt report |
 | `ratchet-allows-baseline` | strict mode with a frozen backlog passes while still reporting, so a repository can enable strict before the backlog is gone |
 | `kotlin-gates` | ktlint scans `src/test/kotlin` with Kotlin declared only via `<sourceDirs>`; detekt reports; SpotBugs is off for a Kotlin module |
+| `plugin-versions-pinned` | a jar consumer that declares no plugins passes `requirePluginVersions` in strict mode: every plugin it runs has a version from this POM |
+| `plugin-versions-warn-by-default` | a consumer's own unversioned plugin is reported, not fatal, and no plugin this POM manages is reported |
 
 Each fixture was verified to fail when its defect is reintroduced, not merely to pass today.
 
@@ -241,3 +243,18 @@ real requirement above the enforced one.
 
 `DependencyConvergence` is not a gate — on a legacy consumer it fails on dozens of transitive
 Maven/Plexus splits — but stays available as `mvn enforcer:enforce`.
+
+## Plugin versions
+
+Every plugin Maven's default lifecycle binds (clean, resources, compiler, surefire, jar, war, plugin,
+install, site; deploy is pinned separately) and the four that Maven 3.9's super POM versioned (antrun,
+assembly, dependency, release) are pinned here, to the versions Maven 3.10.0 binds or resolves. Without
+a pin, these versions come from whichever Maven runs the build, so a runner image with a newer Maven
+changes them in every repository at once. Each pinned version declares `requiredMavenVersion` 3.6.3 and
+`requiredJavaVersion` 1.8, so the floor above still holds.
+
+The `octopus-require-plugin-versions` enforcer execution (`requirePluginVersions`, at `validate`)
+reports any plugin that still has no version. It warns by default; set
+`<octopus.pluginVersions.failOnMissing>true</octopus.pluginVersions.failOnMissing>` to make a missing
+version fail the build. `-Denforcer.skip=true` skips it with the other enforcer executions.
+
