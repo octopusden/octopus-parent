@@ -44,6 +44,31 @@
         <maven-invoker-plugin.version>3.9.1</maven-invoker-plugin.version>
         <maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
 
+        <!-- The plugins Maven's default lifecycle binds for pom, jar, war and maven-plugin packaging, plus
+             clean and site. Unpinned, each version comes from the lifecycle mapping of whichever Maven runs
+             the build, so a runner image with a newer Maven changes them in every repository at once.
+             These are the versions Maven 3.10.0 binds. maven-deploy-plugin is pinned on its own below. -->
+        <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
+        <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
+        <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
+        <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
+        <maven-war-plugin.version>3.5.1</maven-war-plugin.version>
+        <maven-plugin-plugin.version>3.16.0</maven-plugin-plugin.version>
+        <maven-install-plugin.version>3.2.0</maven-install-plugin.version>
+        <maven-site-plugin.version>3.22.0</maven-site-plugin.version>
+        <!-- Maven 3.9's super POM gives these four a version; Maven 3.10.0's does not, so unpinned they
+             resolve to the newest release on every build. Pinned to a fixed release; bump deliberately. -->
+        <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
+        <maven-assembly-plugin.version>3.8.0</maven-assembly-plugin.version>
+        <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
+        <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
+
+        <!-- Whether a plugin without a version fails the build (requirePluginVersions, at validate).
+             Off by default: a consumer's own unversioned plugin then prints a warning instead of failing
+             a build that passed with the previous parent. Set true once the warnings are gone. -->
+        <octopus.pluginVersions.failOnMissing>false</octopus.pluginVersions.failOnMissing>
+
         <!-- Quality gates. Tool engines are pinned to the same versions as the Gradle convention plugin
              (octopus-base/gradle-quality-plugin/gradle.properties) so Maven and Gradle repos judge code
              by identical rules. The analyzers need a JDK 11+ runtime, so they live in profiles activated
@@ -162,7 +187,63 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven-clean-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven-resources-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-plugin-plugin</artifactId>
+                    <version>${maven-plugin-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${maven-install-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${maven-site-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>${maven-antrun-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${maven-assembly-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>${maven-dependency-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>${maven-release-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
                     <configuration>
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
@@ -192,6 +273,22 @@
                             <configuration>
                                 <rules>
                                     <DependencyConvergence/>
+                                </rules>
+                            </configuration>
+                        </execution>
+                        <!-- Its own execution because <fail> is per execution: require-central-metadata
+                             always fails, this one only warns unless octopus.pluginVersions.failOnMissing
+                             is true. No <skip>, so enforcer.skip and a consumer's plugin-level skip apply. -->
+                        <execution>
+                            <id>octopus-require-plugin-versions</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <fail>${octopus.pluginVersions.failOnMissing}</fail>
+                                <rules>
+                                    <requirePluginVersions/>
                                 </rules>
                             </configuration>
                         </execution>
@@ -250,6 +347,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-war-plugin</artifactId>
+                    <version>${maven-war-plugin.version}</version>
                     <configuration>
                         <archive>
                             <addMavenDescriptor>false</addMavenDescriptor>
