@@ -24,7 +24,7 @@
       "groupName": "Apache Maven plugins"
     },
     {
-      "description": "Analysis engines pinned to the versions in octopus-base gradle-quality-plugin/gradle.properties; they move with it, on request from the Dependency Dashboard",
+      "description": "Analysis engines pinned to the versions in octopus-quality-gates gradle.properties, which the shared rulesets are written for; they move with it, on request from the Dependency Dashboard",
       "matchPackageNames": [
         "com.puppycrawl.tools:checkstyle",
         "org.apache.maven.plugins:maven-pmd-plugin",
